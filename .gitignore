@@ -361,3 +361,17 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Project-specific exclusions — deployment scripts, source documents, scratch files
+deploy.ps1
+generate_review.py
+PET Simulation Review*.docx
+PETs Intro Text.*
+PETs table.docx
+new synth.css
+zkp.html
+zkp2.html
+zkp_final.html
+synth-dp-panel.js
+pets-simulation.csproj
+pets-simulation.sln
