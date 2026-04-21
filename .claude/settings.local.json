@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/jsieg/.claude/**)",
+      "WebFetch(domain:privacyishard.net)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

@@ -3,12 +3,13 @@
    content.js
 
    ╔══════════════════════════════════════════════════════════════════════════╗
-   ║  THIS IS THE ONLY FILE YOU NEED TO EDIT FOR CONTENT CHANGES.            ║
+   ║  THIS IS THE ONLY FILE YOU NEED TO EDIT FOR CONTENT CHANGES.             ║
    ║                                                                          ║
    ║  It contains two objects:                                                ║
    ║    • TIPS    — hover/click tooltip definitions (term + body copy)        ║
-   ║    • CONTENT — all module text: titles, definitions, use cases,          ║
-   ║                step labels, tradeoff values, and resource links          ║
+   ║    • CONTENT — all page and module text: about page copy, titles,        ║
+   ║                definitions, use cases, step labels, tradeoff values,     ║
+   ║                notes, and resource links                                 ║
    ║                                                                          ║
    ║  The simulation logic (animations, charts, interactivity) lives in       ║
    ║  app.js and does NOT need to be touched when updating copy.              ║
@@ -17,8 +18,8 @@
    HOW TO EDIT CONTENT:
    ─────────────────────
    • Any string value can be changed freely.
-   • Inline HTML tags (<em>, <strong>) are supported in `definition` and
-     `useCase` fields — they will be rendered as HTML.
+   • Inline HTML tags (<a>, <em>, <strong>) are supported in paragraph fields
+     and will be rendered as HTML.
    • tradeoffs arrays: each entry is [label, displayed value, colour class]
        Colour classes:
          'val-low'  → green  (favourable — low complexity, low risk)
@@ -27,6 +28,9 @@
    • resources arrays: each entry is [link text, URL]
        Leave URL as '' to show a placeholder chip instead of a live link.
        Replace '' with a full URL to make the chip clickable.
+   • notes string: an HTML string rendered inside the collapsed "📝 Notes" accordion
+       above the Resources section in each module. Supports inline tags (<em>,
+       <strong>, <ul>, <li>). Set to '' to show a "No notes added yet" placeholder.
 
    HOW TO EDIT TOOLTIPS (TIPS):
    ─────────────────────────────
@@ -212,7 +216,7 @@ const TIPS = {
 
   'ldp-correction': {
     term: 'Aggregate Correction Formula',
-    body: 'Even though individual answers are noisy, the true aggregate rate can be estimated using: true_rate ≈ (observed_rate − (1−p)/2) / (2p − 1). This works because the noise is structured and its statistical properties are known. The correction becomes less accurate with smaller sample sizes.'
+    body: 'Even though individual answers are noisy, the true aggregate rate can be estimated using: true_rate ≈ (observed_rate − (1−p)/2) / p. This works because the noise is structured and its statistical properties are known. The correction becomes less accurate with smaller sample sizes.'
   },
 
   'local-vs-global': {
@@ -224,11 +228,13 @@ const TIPS = {
 
 
 /* =============================================================================
-   CONTENT — all module text, tradeoff values, and resource links
+   CONTENT — about page copy and all module text, tradeoff values, and resource links
 
    Structure:
-     CONTENT.<moduleKey> = {
-       tag, title, definition, useCase, tradeoffs, resources,
+     CONTENT.about  — landing / about page (displayed on first load; return by
+                       clicking the FPF logo or site title in the header)
+     CONTENT.<moduleKey> — {
+       tag, title, definition, useCase, tradeoffs, notes, resources,
        ...module-specific simulation data (schools, steps, institutions, etc.)
      }
 
@@ -236,17 +242,46 @@ const TIPS = {
    ============================================================================= */
 const CONTENT = {
 
+  // ── About / Home page ──────────────────────────────────────────────────────
+  //
+  // Displayed on first load and whenever the user clicks the FPF logo or the
+  // site title in the header. All copy lives here so it can be updated without
+  // touching app.js. `paragraphs` is an array rendered in order; `disclaimer`
+  // is separated so it can receive distinct callout styling.
+  about: {
+    eyebrow:  'Future of Privacy Forum',
+    title:    'Privacy Enhancing Technologies in Education — Interactive Guide',
+    subtitle: 'An experimental companion tool · April 2026',
+
+    paragraphs: [
+      'This interactive tool represents an initial exploration by Future of Privacy Forum into how generative AI can support understanding of complex privacy concepts in education. Developed as a companion "thought experiment" to our 2026 resources on privacy-enhancing technologies (PETs) in education for SEAs, Researchers and EDTech providers, this experience is designed to translate key ideas from our analysis into a more visual, interactive format. It builds on <a href="https://fpf.org/blog/fpf-releases-report-on-the-adoption-of-privacy-enhancing-technologies-by-state-education-agencies/" target="_blank" rel="noopener">findings from our earlier work</a> examining how state education agencies and their partners are beginning to evaluate and adopt PETs.',
+
+      'Privacy-enhancing technologies — including approaches such as secure multiparty computation, differential privacy, and synthetic data — hold significant promise for enabling data use while reducing risks to individuals. However, these technologies can be difficult to conceptualize and compare in practice. This prototype uses AI-assisted methods (including tools such as Claude Code and Claude Artifacts) to present simplified scenarios, visualizations, and guided explanations intended to make these concepts more accessible to policymakers, researchers, and practitioners.',
+
+      'This project is being released to a limited audience — including state educational agencies, state longitudinal data system leaders, researchers, and education technology providers — for feedback on both the content and the format. It is not intended to provide technical or legal guidance, nor does it represent a comprehensive or definitive treatment of PETs. Rather, it is an experimental supplement to our formal research, designed to explore whether interactive tools can improve understanding and support more informed decision-making.',
+    ],
+
+    disclaimer: {
+      label: 'Note on AI-generated content:',
+      body:  'As with any use of generative AI, this tool has limitations. The scenarios and explanations presented here are illustrative and may simplify or omit important technical nuances. Users should rely on primary sources, expert consultation, and formal documentation when evaluating PETs for real-world implementation. We welcome feedback on accuracy, clarity, and usability as we continue to assess the role that AI-enabled tools may play in advancing privacy-protective data practices in education.',
+    },
+
+    exploreLabel: 'Explore the modules',
+  },
+
   // ── Module 1: Differential Privacy ────────────────────────────────────────
   //
   // This module has two sub-variants accessed via tabs: Global DP and Local DP.
   // 'global' and 'local' keys hold the text for each tab independently.
-  // Shared fields (tag, title, definition, resources) appear above the tabs.
+  // Shared fields (tag, title, definition, notes, resources) appear above the tabs.
   dp: {
     tag:   'Module 1 of 8',
     title: 'Differential Privacy',
 
     // Shared intro shown above the Global / Local tabs
     definition: 'Differential privacy adds carefully calibrated <em>random noise</em> to query results so that no single person\'s data can be inferred — while still allowing accurate analysis of the group. The <em>privacy budget</em> (ε, "epsilon") controls this tradeoff: a small ε means more noise and stronger privacy; a large ε means less noise and higher accuracy but weaker privacy. There are two main variants — <strong>Global DP</strong> and <strong>Local DP</strong> — that differ in <em>where</em> the noise is added and how much trust is required.',
+
+    notes: '<strong>Global DP — implementation simplifications to be aware of:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Sensitivity is fixed at 1.</strong> The Laplace noise scale is <em>b = Δf / ε</em>, where Δf is the global sensitivity of the query. This simulation assumes Δf = 1 (a single-person count query). In practice, sensitivity must be calculated for each query type — an incorrect value directly undermines the privacy guarantee without any visible warning.</li><li><strong>Zero-clipping introduces upward bias for small groups.</strong> Noisy counts below zero are truncated to 0. This post-processing step is not itself a privacy violation, but it biases reported counts upward for small subgroups — a known pitfall that disproportionately affects small demographic cells and can distort equity analyses.</li><li><strong>Each query run spends ε — but this simulation does not track it.</strong> Under sequential composition, running the same query k times costs k × ε total privacy budget. A user clicking "Run Query" ten times at ε = 1.0 has actually spent ε = 10.0. Production DP systems enforce a budget ceiling and refuse further queries once it is exhausted.</li><li><strong>The simulation starts with no budget spent and no noise applied.</strong> The initial bars show true (undistorted) counts — a deliberate choice so you can see the baseline before any privacy cost is incurred. Click "Run Query" to spend your first ε and observe how the noisy bars diverge from the truth. This makes the link between budget expenditure and data distortion explicit from the first interaction.</li><li><strong>Parallel composition: disjoint subsets cost only ε once.</strong> When queries operate on non-overlapping subgroups (e.g., separately querying Grade 3, Grade 4, and Grade 5 counts where each student appears in exactly one group), the total privacy cost is just ε — not k × ε. This is the parallel composition theorem. It is why publishing a full grade-level breakdown is cheaper than running the same query repeatedly on the whole dataset. Production DP systems track composition type and credit the analyst accordingly.</li><li><strong>Pure ε-DP vs. approximate (ε, δ)-DP — when practitioners use each.</strong> This simulation demonstrates <em>pure</em> ε-DP with the Laplace mechanism, which provides the strongest guarantee: every output event is bounded in probability by e<sup>ε</sup> relative to neighboring datasets. In practice, many deployed systems use <em>approximate</em> (ε, δ)-DP with the Gaussian mechanism instead. The δ parameter allows a small, explicitly bounded probability (e.g. δ = 10<sup>−8</sup>) that the strict ε bound is exceeded. This is acceptable when δ is much smaller than 1/n (one-in-a-million for a million-record dataset). The Gaussian mechanism typically requires less noise than Laplace for the same (ε, δ) guarantee, making it preferred for high-dimensional data and ML training (DP-SGD). When evaluating a DP system, always check whether the guarantee is pure ε or (ε, δ) — a system advertising a small ε may carry a non-negligible δ that weakens the stated guarantee.</li></ul>',
 
     resources: [
       // Foundational federal standard — evaluating DP claims, the DP pyramid, privacy hazards
@@ -284,7 +319,7 @@ const CONTENT = {
         ['Data stays local?',         'Yes',            'val-low'],
         ['3rd party needed?',         'No',             'val-low'],
         ['Implementation complexity', 'Medium',         'val-med'],
-        ['Output type',               '*TBD*',          'val-med'],
+        ['Output type',               'Aggregate only (counts · rates · averages)', 'val-low'],
       ],
     },
 
@@ -306,7 +341,7 @@ const CONTENT = {
 
       // Randomized response parameters shown in the simulation.
       // p = probability of answering truthfully (the "honest coin").
-      // Correction formula: true_rate ≈ (observed_rate - (1-p)/2) / (p - (1-p)/2)
+      // Correction formula: true_rate ≈ (observed_rate - (1-p)/2) / p
       // Edit this value (0.5–1.0) to change the demo; 0.7 = 70% truthful.
       flipProbability: 0.7,
 
@@ -316,7 +351,7 @@ const CONTENT = {
         ['Data stays local?',         'Yes — always',       'val-low'],
         ['3rd party needed?',         'No',                 'val-low'],
         ['Implementation complexity', 'Low–Medium',         'val-low'],
-        ['Output type',               '*TBD*',          'val-med'],
+        ['Output type',               'Aggregate only (population rate estimate)', 'val-low'],
       ],
     },
   },
@@ -334,8 +369,10 @@ const CONTENT = {
       ['Data stays local?',         'Yes (hashes only)',       'val-low'],
       ['3rd party needed?',         'Optional',               'val-med'],
       ['Implementation complexity', 'Medium–High',            'val-med'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Linked record pairs — no PII crosses boundary', 'val-low'],
     ],
+
+    notes: '<strong>How the matching works in this simulation:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Matching is driven by bigram similarity, not raw identifiers.</strong> Each record is compared using the Sørensen–Dice coefficient over character bigrams (overlapping two-character pairs from the normalised name and date of birth). Two records link if their similarity score meets or exceeds 60%. This is mathematically equivalent to what Bloom filter PPRL computes: the bit-array Dice distance approximates bigram Dice similarity over the same n-gram set.</li><li><strong>Abbreviated names match at lower scores than exact pairs.</strong> "J. Okafor / 2003-08-21" and "James Okafor / 2003-08-21" share most of their DOB bigrams and several name bigrams — enough to exceed the threshold even though the names are not identical. This is the key property of Bloom filter PPRL: it tolerates the real-world variation in how agencies record the same person\'s name.</li><li><strong>The similarity score is shown on each matched row.</strong> Scores below 100% reflect name abbreviation or variation, not a weaker privacy guarantee — the privacy property depends on the encoding, not the match score.</li></ul><strong>What is simplified relative to production PPRL:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real Bloom filters use bit arrays.</strong> In production (e.g. the Schnell et al. scheme), each bigram is hashed into multiple bit positions in a fixed-length bit vector. The hex strings shown are a visual proxy — they capture the deterministic encoding property but not the bit-array structure or the hardening steps (e.g. record-level salting, XOR folding) that prevent hash reversal.</li><li><strong>Threshold tuning is a privacy–utility tradeoff.</strong> A lower threshold catches more true matches but risks false positives (linking different people). A higher threshold reduces false positives but misses more true matches. In a real deployment, threshold selection involves iterative testing against ground-truth linked records and is a key governance decision.</li></ul>',
 
     resources: [
       // NIH/NIA strategy and recommendations report — practical PPRL for government agencies
@@ -370,8 +407,10 @@ const CONTENT = {
       ['Data stays local?',         'Yes',           'val-low'],
       ['3rd party needed?',         'No',            'val-low'],
       ['Implementation complexity', 'Very High',     'val-high'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Aggregate only (result of agreed computation)', 'val-low'],
     ],
+
+    notes: '<strong>What this simulation accurately demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Additive secret sharing is real.</strong> Each school score is split into three shares that sum exactly to the original value (a + b + c = score). The district average is derived from these shares — not from the raw scores directly.</li><li><strong>Partial sums are meaningless alone.</strong> Each party only ever sees one share per school. Their partial sum is a random-looking integer that reveals nothing about any individual school\'s score. Only when all three partial sums are combined does the true aggregate emerge.</li><li><strong>Negative shares are valid.</strong> When you see a dashed chip with a negative value, that is correct and intentional — additive shares range freely over the integers. A negative share is just as valid as a positive one; what matters is that all three sum to the original score.</li></ul><strong>What is deliberately simplified:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>The "secure" part is not enforced.</strong> In a real MPC protocol (e.g. SPDZ, GMW), parties cannot deviate from the protocol even if malicious — cryptographic commitments and zero-knowledge proofs enforce honest behaviour. Here, the computation runs in plain JavaScript with no cryptographic enforcement. The simulation shows the correct <em>information flow</em> of additive secret sharing, but not the cryptographic mechanisms that make it tamper-proof.</li><li><strong>Communication rounds are collapsed.</strong> A real 3-party protocol requires multiple rounds of authenticated message exchange. The animation compresses this into a single step for clarity.</li></ul>',
 
     resources: [
       // Free textbook — the definitive practical introduction to MPC, widely used in courses
@@ -405,8 +444,16 @@ const CONTENT = {
       ['Data stays local?',         'Yes',                       'val-low'],
       ['3rd party needed?',         'Coordinator',               'val-med'],
       ['Implementation complexity', 'High',                      'val-high'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Model weights only — no individual records', 'val-low'],
     ],
+
+    notes: `<ul>
+      <li><strong>Gradient inversion — the hidden privacy risk.</strong> Sharing gradient updates (Δw) instead of raw data is not the same as sharing nothing. In 2019, Zhu et al. demonstrated that gradients from a single training step can be inverted to approximately reconstruct the training images pixel-by-pixel (<em>"Deep Leakage from Gradients," NeurIPS 2019</em>). For tabular data like student records, similar reconstruction attacks have been shown to recover individual row values from gradient updates — especially when batch sizes are small (one record = one gradient update).</li>
+      <li><strong>DP-SGD is the mitigation.</strong> Differentially Private Stochastic Gradient Descent (DP-SGD, Abadi et al. 2016) clips each per-sample gradient to a maximum norm, then adds calibrated Gaussian noise before the update is sent to the coordinator. This provides a formal (ε, δ)-DP guarantee on the gradient, making reconstruction attacks provably difficult. The cost is reduced model accuracy — the same privacy-utility tradeoff as global DP, but at the gradient level.</li>
+      <li><strong>The simulation does not show gradient inversion or DP-SGD.</strong> The "Δw" packets in the animation represent conceptual gradient updates. In a real deployment, each Δw would either be a raw gradient (vulnerable to reconstruction) or a DP-SGD-noised gradient. Without DP-SGD, federated learning offers weaker privacy guarantees than the architecture diagram suggests.</li>
+      <li><strong>Secure aggregation is a complementary control.</strong> Even without DP, the coordinator can be prevented from seeing individual institution gradients by using secure aggregation (a form of MPC): each institution secret-shares its gradient with the others, and the coordinator only ever sees the sum. This prevents a malicious coordinator from singling out one institution's gradient for reconstruction, but does not prevent the final aggregated gradient from leaking information about the training set as a whole.</li>
+      <li><strong>Practical deployment guidance.</strong> For sensitive education data, FL should be paired with DP-SGD and, ideally, secure aggregation. FL alone — without either — provides data-locality but not reconstruction-resistance. The privacy guarantee of FL is only as strong as its weakest layer.</li>
+    </ul>`,
 
     resources: [
       // Original FedAvg paper — foundational reading, surprisingly accessible
@@ -433,8 +480,17 @@ const CONTENT = {
       ['Data stays local?',         'Synthetic can be shared',         'val-low'],
       ['3rd party needed?',         'No',                              'val-low'],
       ['Implementation complexity', 'Medium–High',                    'val-med'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Synthetic individual records (no real PII)', 'val-low'],
     ],
+
+    notes: `<ul>
+      <li><strong>What the pipeline simulation demonstrates.</strong> The two-pipeline walkthrough shows the core distinction between plain and DP-trained synthesis. A plain generator trains directly on real records — its weights can memorize any individual, including statistical outliers. DP-trained synthesis adds calibrated noise to every gradient update (via DP-SGD or equivalent), preventing the generator from fitting any single record tightly. Phase ④ Attack Test illustrates the practical consequence: the plain pipeline's outlier survives into the output and can be recovered; the DP pipeline's output is statistically indistinguishable from noise.</li>
+      <li><strong>What the ε slider represents.</strong> The epsilon (ε) value is the privacy budget consumed during training — the same quantity as in the Differential Privacy module. A lower ε forces more noise into each gradient step, which reduces how closely the generator can fit rare patterns. Small subgroups (chronic absentees, IEP students) degrade first because they require the generator to fit a sharp, low-frequency distribution that noise disrupts proportionally more than majority-class patterns.</li>
+      <li><strong>Simplifications in this simulation.</strong> The pipeline shows conceptual information flow, not a live DP computation. In production systems (e.g., CTGAN with DP-SGD, the MST mechanism, or smartnoise-sdk), noise is injected via a formal privacy accounting framework and the ε budget is tracked across all training steps. The ε value shown on the slider reflects the theoretical guarantee — not a value computed from the demo records.</li>
+      <li><strong>Memorization risk: outliers are the most vulnerable.</strong> A generator trained without formal privacy protection may memorize statistical outliers — students with unusual attribute combinations (e.g., a 22-year-old 12th-grader with an IEP and zero absences) that appear only once in the real dataset. An adversary can extract memorized records by querying the model systematically, effectively recovering a real individual's record even though no real records appear in the output. The red ⚠ tile in the pipeline represents exactly this kind of record.</li>
+      <li><strong>High fidelity does not imply low privacy risk.</strong> A synthetic dataset that perfectly reproduces rare-subgroup statistics may have overfit to — and partially memorized — those very records. The fidelity-privacy tradeoff runs in both directions: reducing DP noise improves statistical accuracy but increases leakage risk for outliers. Fidelity metrics (means, distributions) do not measure memorization and can be high even when individual records are at risk.</li>
+      <li><strong>Membership inference and audit.</strong> Membership inference attacks test whether a given real record was in the training data by querying the generative model and examining output statistics. A well-governed synthetic data release should include a membership inference audit (e.g., shadow-model attack or nearest-neighbor adversary) before publication, especially when the dataset includes students in small demographic cells or with rare service combinations.</li>
+    </ul>`,
 
     resources: [
       ['Piloting Synthetic Data in Your Organization: A How-To Guide — MDI / Georgetown', 'https://georgetown.app.box.com/s/zmq1b61sybzm8yd4zct9qjzxqtitql84'],
@@ -443,6 +499,40 @@ const CONTENT = {
       ['Generating a Fully Synthetic Human Services Dataset — Urban Institute', 'https://www.urban.org/research/publication/generating-fully-synthetic-human-services-dataset'],
       ['Analyzing the Privacy and Utility Trade-off for Synthetic Datasets with Imbalanced Demographic Groups — Urban Institute', 'https://urban-institute.medium.com/analyzing-the-privacy-and-utility-tradeoff-for-synthetic-datasets-with-imbalanced-demographic-c8968cc5d0a1'],
     ],
+
+    // ── Statistical Equivalence panel — rows rendered in the toggle panel ──────
+    statTable: [
+      { metric: 'Avg GPA',           real: '3.05',  synthetic: '3.05',  match: '✓ Yes' },
+      { metric: '% Chronic absent',  real: '16.7%', synthetic: '16.7%', match: '✓ Yes' },
+      { metric: '% With IEP',        real: '16.7%', synthetic: '16.7%', match: '✓ Yes' },
+      { metric: 'Any real student?', real: 'Yes',   synthetic: 'No',    match: '✓ Protected' },
+    ],
+
+    // ── Advanced panel: DP-trained synthetic data ──────────────────────────────
+    dpAdvanced: {
+      title:       'Advanced: Synthetic Data with Formal Privacy Guarantees',
+      badge:       'EMERGING',
+      description: 'Standard synthetic data protects privacy by generating new records — but the generator itself is trained on real data and can <strong style="color:var(--amber)">memorize unusual records</strong> (outliers), which may then surface in the synthetic output. Adding <strong>differential privacy during training</strong> closes this gap: calibrated noise is injected into the training process so the generator cannot tightly fit any individual record. The result is a synthetic dataset with a <em>mathematically bounded</em> privacy guarantee.',
+
+      insights: [
+        'Both pipelines start with the same real student records — including a low-GPA, low-attendance outlier (highlighted in red). The outlier represents a student who could be re-identified if their pattern appears in the synthetic output.',
+        '<strong style="color:var(--text)">This is the critical difference.</strong> Plain synthesis trains on real records directly — the generator memorizes patterns including outliers. DP synthesis injects calibrated noise at every training step. Use the slider to see how the privacy budget (ε) controls the tradeoff between protection strength and data fidelity.',
+        'Both produce synthetic records. Plain synthesis preserves the outlier\'s signature (red tile). DP synthesis statistically smooths the outlier region — no individual record is recoverable from the output.',
+        '<strong style="color:var(--text)">The attack test.</strong> Against plain synthetic data the re-identification attack succeeds — the outlier\'s pattern is faithfully preserved. Against DP synthetic data the attack fails — training noise means the attacker cannot distinguish signal from random variation.',
+      ],
+
+      epsLabels: {
+        min:    'ε = 0.1 (strict)',
+        max:    'ε = 10 (loose)',
+        budget: 'Privacy budget:',
+      },
+
+      epsInterp: {
+        strict:   'Strong protection — lower fidelity. Individual records cannot be recovered from synthetic output. Some statistical patterns smoothed out.',
+        moderate: 'Moderate tradeoff. Useful synthetic data, but extreme outliers leave a faint signature. Some re-identification risk for unusual records.',
+        loose:    'Weak protection — high fidelity. Low training noise allows the generator to memorize outliers. Re-identification attack likely to succeed.',
+      },
+    },
   },
 
   // ── Module 6: Trusted Execution Environments ──────────────────────────────
@@ -461,8 +551,10 @@ const CONTENT = {
       ['Data stays local?',         'In enclave (encrypted)',        'val-low'],
       ['3rd party needed?',         'Hardware provider',            'val-med'],
       ['Implementation complexity', 'Very High',                    'val-high'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Any — aggregate or record-level, per query design', 'val-med'],
     ],
+
+    notes: '',
 
     resources: [
       // FPF policy report — best resource for policy audience on TEEs and confidential computing
@@ -492,8 +584,10 @@ const CONTENT = {
       ['Data stays local?',         'Encrypted at rest/transit',         'val-low'],
       ['3rd party needed?',         'Cloud vendor (sees only ciphertext)', 'val-med'],
       ['Implementation complexity', 'Very High',                         'val-high'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Encrypted result — decrypted only by key holder', 'val-low'],
     ],
+
+    notes: '<strong>Semantic security — what the simulation demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Same plaintext → different ciphertext each run (IND-CPA).</strong> Click "Encrypt &amp; Send", note the ciphertext strings, reset, and run again — the ciphertexts are completely different even though the underlying values (GPA, attendance, proficiency count) have not changed. This is the defining property of semantically secure encryption: an observer who sees two ciphertexts cannot determine whether they encrypt the same value or different values.</li><li><strong>The cloud vendor never sees the plaintext — and cannot infer it from the ciphertext.</strong> Because the ciphertext is indistinguishable from random, a vendor who receives it gains no information about the underlying value, even if they see multiple encryptions of the same record.</li></ul><strong>What is simplified relative to production HE:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real randomness comes from lattice noise, not JavaScript Math.random().</strong> Production HE schemes (BFV, CKKS, BGV) achieve probabilistic encryption by adding carefully structured noise drawn from a discrete Gaussian distribution over a polynomial ring. The noise is large enough to hide the plaintext from anyone without the secret key, but small enough that the homomorphic computation still produces the correct result after decryption.</li><li><strong>Homomorphic operations on ciphertext are not simulated.</strong> The "computing on ciphertext" step is animated but the computation is performed on the plaintext values directly. Real HE arithmetic (addition and multiplication of ciphertexts) is orders of magnitude slower than plaintext arithmetic and introduces a small amount of noise with each operation — which is why bootstrapping is required for deep computation circuits.</li><li><strong>Key management is not shown.</strong> In practice, the SEA generates a public/private key pair. The public key is used for encryption (by anyone); the private key — held only by the SEA — is required for decryption. The vendor never has access to the private key.</li></ul>',
 
     resources: [
       // Industry standardization body — overview of HE schemes and open-source libraries
@@ -523,8 +617,10 @@ const CONTENT = {
       ['Data stays local?',         'Tokenized data shareable',      'val-low'],
       ['3rd party needed?',         'Vault operator',                'val-med'],
       ['Implementation complexity', 'Low–Medium',                    'val-low'],
-      ['Output type',               '*TBD*',          'val-med'],
+      ['Output type',               'Tokenized operational records (PII fields replaced)', 'val-med'],
     ],
+
+    notes: '',
 
     resources: [
       // Cloud Security Alliance best practices guide for tokenization implementers
@@ -566,6 +662,7 @@ const CONTENT = {
           'Reduces data utility for small subgroups',
           'Threshold (n=10) is arbitrary',
         ],
+        notes: '',
         resources: [
           // FCSM Statistical Policy Working Paper 22 — the federal standard on statistical disclosure limitation
           ['Report on Statistical Disclosure Limitation Methodology (FCSM SPWP-22) — OMB/NCES', 'https://nces.ed.gov/FCSM/pdf/SPWP22_rev.pdf'],
@@ -591,6 +688,7 @@ const CONTENT = {
           'No formal guarantee against re-identification',
           'Combination attacks still possible',
         ],
+        notes: '',
         resources: [
           // NIST SP 800-122 — federal PII guide covering masking and protection techniques
           ['Guide to Protecting the Confidentiality of PII (NIST SP 800-122)', 'https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-122.pdf'],
@@ -614,6 +712,7 @@ const CONTENT = {
           'No formal privacy proof',
           'Hierarchy design requires judgment',
         ],
+        notes: '',
         resources: [
           // FCSM SPWP-22 — covers generalization and data rolling-up methods
           ['Report on Statistical Disclosure Limitation Methodology (FCSM SPWP-22) — OMB/NCES', 'https://nces.ed.gov/FCSM/pdf/SPWP22_rev.pdf'],
@@ -641,6 +740,7 @@ const CONTENT = {
           'Vulnerable to differencing attacks',
           'DP is strictly superior',
         ],
+        notes: '',
         resources: [
           // FCSM SPWP-22 — covers noise addition / data disturbing as a federal SDL method
           ['Report on Statistical Disclosure Limitation Methodology (FCSM SPWP-22) — OMB/NCES', 'https://nces.ed.gov/FCSM/pdf/SPWP22_rev.pdf'],
@@ -664,6 +764,7 @@ const CONTENT = {
           'No protection against attribute inference',
           'DP provides stronger guarantees',
         ],
+        notes: '<strong>Why k-anonymity is not sufficient on its own:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>The homogeneity attack.</strong> k-anonymity only requires that k records share the same quasi-identifiers — it says nothing about what sensitive attributes those records carry. If all k records in an equivalence class have the same sensitive value (e.g., all 5 students in a k=5 group received special education services), an attacker can infer that sensitive attribute for any individual in that group with certainty, even without knowing which record belongs to them. The simulation highlights groups where this occurs with a warning callout.</li><li><strong>l-diversity is the direct extension.</strong> A dataset satisfies l-diversity when every equivalence class contains at least l <em>distinct</em> values for each sensitive attribute. This prevents the homogeneity attack by ensuring no sensitive attribute is overrepresented within a group. Entropy l-diversity strengthens this further by requiring that the sensitive values are not just distinct but also evenly distributed (Shannon entropy ≥ log(l)).</li><li><strong>t-closeness tightens the guarantee further.</strong> Even with l-diversity, an attacker may infer sensitive values if the distribution within an equivalence class is very different from the population distribution. t-closeness requires that the distribution of sensitive values in each equivalence class is within a threshold t of the overall population distribution (measured by Earth Mover\'s Distance). Smaller t = stronger guarantee but greater data distortion.</li><li><strong>None of these methods carry a formal, composable privacy guarantee.</strong> Unlike differential privacy, k-anonymity, l-diversity, and t-closeness cannot be composed: releasing multiple views of the same dataset may allow an adversary to re-identify individuals even if each release individually satisfies the criterion. They also provide no protection against adversaries who possess external background knowledge about specific individuals.</li></ul>',
         resources: [
           // Samarati & Sweeney 1998 original k-anonymity paper (freely available)
           ['Protecting Privacy when Disclosing Information: k-Anonymity and Its Enforcement — Samarati & Sweeney', 'https://dataprivacylab.org/dataprivacy/projects/kanonymity/paper3.pdf'],
@@ -674,5 +775,303 @@ const CONTENT = {
 
     }, // end techniques
   },
+
+  // ── Compare module ─────────────────────────────────────────────────────────
+  //
+  // All editorial text, data arrays, and table metadata for the Compare module.
+  // The render function (renderCompare in app.js) reads exclusively from here.
+  compare: {
+
+    // Module header
+    header: {
+      tag:        'All Techniques',
+      title:      'Comparison Dashboard',
+      definition: 'Side-by-side comparison of all privacy techniques across key dimensions relevant to education data contexts.',
+    },
+
+    // Symbols legend and scale panel copy
+    symbolsTitle:   '✓ Symbols Guide',
+    symbols: [
+      { symbol: '✓', label: 'Fully satisfied' },
+      { symbol: '~', label: 'Partially / conditionally' },
+      { symbol: '✗', label: 'Not satisfied' },
+    ],
+    complexityTitle: 'Complexity Scale',
+    complexityScale: [
+      '● — Relatively low',
+      '●●● — Moderate',
+      '●●●●● — Very high',
+    ],
+    sldsNote: 'Most SEAs layer traditional methods (suppression + generalization) as a baseline, then add formal PETs (DP, PPRL) for higher-risk data sharing contexts.',
+
+    // Tab bar labels
+    tabs: {
+      tables:    '📋 Comparison Tables',
+      radarPets: '◉ Radar — PETs',
+      radarTrad: '◉ Radar — Traditional De-ID',
+    },
+
+    // PETs radar panel title and description
+    petsRadarTitle:       'Privacy-Enhancing Technologies — Multi-Dimension Radar',
+    petsRadarDescription: 'Each polygon represents one PET scored 1–5 on five dimensions. A larger area means better overall profile across these axes — but the right technique depends on your specific threat model and constraints. <strong>Click any technique in the legend to isolate it.</strong>',
+
+    // Traditional De-ID radar panel title, description, and scores.
+    // Axes: Privacy Strength, Data Utility, Small Group Protection,
+    //       Ease of Implementation, Attack Resistance (all 1–5, higher = better).
+    // All five techniques score low on Attack Resistance — none carry formal
+    // mathematical privacy guarantees. Adjust scores here to update the chart.
+    tradRadar: {
+      title:       'Traditional De-identification — Multi-Dimension Radar',
+      description: 'Each polygon scores one technique 1–5 across five operational dimensions. Note that all five techniques score low on <strong>Attack Resistance</strong> — none carry formal mathematical privacy guarantees. Use this chart to understand where each method excels operationally, not as a measure of absolute privacy strength. <strong>Click any technique in the legend to isolate it.</strong>',
+      techniques: [
+        { name: 'Cell Suppression', color: 'var(--blue)',   bgColor: 'rgba(77,159,255,0.13)',  scores: [2, 4, 5, 5, 2] },
+        { name: 'Data Masking',     color: 'var(--amber)',  bgColor: 'rgba(255,201,64,0.13)',  scores: [3, 3, 1, 5, 2] },
+        { name: 'Generalization',   color: 'var(--mint)',   bgColor: 'rgba(0,229,160,0.13)',   scores: [2, 4, 3, 3, 2] },
+        { name: 'Perturbation',     color: 'var(--purple)', bgColor: 'rgba(176,111,255,0.13)', scores: [2, 4, 2, 4, 2] },
+        { name: 'k-Anonymity',      color: '#ff6b9d',       bgColor: 'rgba(255,107,157,0.13)', scores: [3, 3, 4, 2, 3] },
+      ],
+    },
+
+    // Panel title strings (count is derived dynamically from array length in app.js)
+    petsTitle: 'Privacy-Enhancing Technologies',
+    tradTitle: 'Traditional De-identification Methods',
+
+    // PETs comparison table data (8 techniques)
+    pets: [
+      { name: 'Differential Privacy',   local: '✓ Yes',              interpretable: '✓ Yes (noisy)',            utilityImpact: '~ Noise reduces precision',        utilityTip: 'Each query adds calibrated Laplace or Gaussian noise scaled to 1/ε. At strong privacy settings (low ε), individual group counts may be off by tens — acceptable for large populations but potentially misleading for small subgroups such as students with disabilities or specific demographic cells.',                                                                                                                                                      formal: '✓ Proven (ε)',           attackRisk: 'Differencing attack',          attackTip: 'Running two overlapping queries and subtracting reveals an individual record. The ε budget bounds (but does not eliminate) this risk — containing differencing attacks is the original motivation for developing differential privacy.', complexity: 2, complexityTip: 'Libraries exist (OpenDP, Google DP library) and are well-documented. Main challenge is calibrating sensitivity and ε correctly — misconfiguration silently undermines the guarantee with no visible error.', usecase: 'Aggregate queries on sensitive datasets' },
+      { name: 'PPRL',                   local: '✓ Yes',              interpretable: '✓ Yes (matched pairs)',    utilityImpact: '~ Some false matches possible',    utilityTip: 'Bloom filter matching tolerates name variation and typos, but introduces two error types: false positives (different people matched as the same) and false negatives (same person not matched due to data quality differences). Threshold tuning controls this tradeoff — a lower threshold catches more matches but risks linking distinct individuals.',                                                                                                  formal: '~ Computational',        formalTip: 'PPRL security relies on the computational difficulty of reversing a hash or Bloom filter — there is no formal proof that it cannot be broken, only that it is impractical with current hardware. This is weaker than ε-DP or cryptographic guarantees.', attackRisk: 'Linkage / re-identification',  attackTip: 'Joining two encoded datasets from different sources can re-identify individuals even without the underlying PII — the classic Netflix and AOL attack pattern. Hash hardening and careful threshold tuning are the main mitigations.', complexity: 3, complexityTip: 'Encoding parameters (bigram settings, bit-array length, hash functions) require specialist knowledge. Threshold tuning must be validated against ground-truth data. Coordination between agencies on shared encoding parameters adds operational burden.', usecase: 'Cross-agency record matching without PII' },
+      { name: 'Secure MPC',             local: '✓ Yes',              interpretable: '✓ Yes (result)',           utilityImpact: '✓ Full result accuracy',           formal: '✓ Proven',               attackRisk: 'Malicious party deviation',      attackTip: 'A party that deviates from the agreed protocol may attempt to extract information beyond the agreed output. Cryptographic commitments and zero-knowledge proofs enforce honest behavior in production deployments — this risk is addressed by the protocol design, not the data architecture.', complexity: 4, complexityTip: 'Requires cryptographic expertise to implement and audit correctly. Communication overhead scales with the number of parties and computation rounds. Off-the-shelf frameworks (MP-SPDZ, MOTION) exist but require significant engineering investment and specialist staff to deploy.', usecase: 'Joint computation across non-trusting parties' },
+      { name: 'Federated Learning',     local: '✓ Yes',              interpretable: '~ Partial',                utilityImpact: '~ Less accurate than centralised', utilityTip: 'Model accuracy is lower than centralized training because: (1) data is heterogeneous across institutions — each site has a different distribution; (2) only gradients are shared, not raw records, so the global model converges more slowly; (3) adding DP-SGD noise to gradients further reduces accuracy. The gap narrows with more training rounds and more participating institutions.', formal: '~ Only with DP-SGD',     formalTip: 'Federated learning alone provides no formal privacy guarantee — gradient updates can be inverted to partially reconstruct training data. Adding DP-SGD (differentially private stochastic gradient descent) provides a formal (ε, δ)-DP guarantee on the gradient, making reconstruction attacks provably difficult.', attackRisk: 'Gradient inversion',             attackTip: 'Gradient updates shared with the coordinator can be mathematically inverted to approximately reconstruct individual training records — demonstrated by Zhu et al. (NeurIPS 2019). DP-SGD clips and noises gradients before sharing; secure aggregation prevents the coordinator from seeing individual institution gradients.', complexity: 4, complexityTip: 'Requires distributed infrastructure, a coordinator server, and FL framework expertise (Flower, PySyft). Formal privacy guarantees require adding DP-SGD and secure aggregation, each adding engineering complexity. Model convergence on heterogeneous data across institutions requires ongoing tuning.', usecase: 'Training shared ML models on distributed data' },
+      { name: 'Synthetic Data',         local: '✓ Shareable',        interpretable: '✓ Yes',                    utilityImpact: '~ Fidelity varies by model',       utilityTip: 'Population-level statistics (means, overall distributions) are generally well-preserved. Small subgroup statistics degrade fastest — a 1-in-100 subgroup needs many more training records to model accurately than a 1-in-3 group. Fidelity worsens further when DP-SGD noise is added during training to provide formal guarantees. The privacy-utility tradeoff is most acute for rare demographic cells.',                                             formal: '~ Model-dependent',      formalTip: 'Privacy protection depends on how the generative model was trained. Without formal DP-SGD training, a model may memorize rare records — no mathematical bound on leakage exists. A DP-trained synthetic dataset upgrades this to a formal (ε, δ)-DP guarantee.', attackRisk: 'Membership inference',           attackTip: 'An adversary can query the generative model to determine whether a specific individual was in the training set. Rare records and outliers are most vulnerable — a student with an unusual combination of attributes (e.g., unique age/grade/IEP combination) may be recoverable even from published synthetic data.', complexity: 3, complexityTip: 'Generation libraries (SDV, CTGAN, smartnoise-sdk) are available but require data science expertise to configure and evaluate. DP-trained synthesis adds another layer of complexity. Fidelity validation and membership inference auditing require specialist knowledge before a dataset can be responsibly released.', usecase: 'Public research access, tool development' },
+      { name: 'TEE / Secure Enclave',   local: '✓ In enclave',       interpretable: '✓ Yes',                    utilityImpact: '✓ No utility loss',                formal: '✓ Hardware attestation', formalTip: 'Security is rooted in hardware: the CPU cryptographically proves the enclave is unmodified and running the expected code. This is a strong practical guarantee, but relies on trusting the hardware manufacturer and attestation supply chain — not a pure mathematical proof.', attackRisk: 'Side-channel / supply chain',     attackTip: 'Security depends on trusting the hardware manufacturer and the integrity of the attestation chain. Known side-channel attacks (Spectre, Meltdown, SGX vulnerabilities) have broken enclave isolation in research settings. Supply chain compromise of the hardware or firmware is a residual risk not addressed by software design alone.', complexity: 5, complexityTip: 'Requires specialized hardware procurement, enclave software development (Intel SGX SDK, ARM TrustZone), and attestation infrastructure. Side-channel mitigations require deep hardware expertise. Very few staff have the skills to implement and audit correctly — typically requires dedicated security engineers.', usecase: 'Secure computation on restricted platforms' },
+      { name: 'Homomorphic Encryption', local: '✓ Encrypted',        interpretable: '✓ Yes (after decryption)', utilityImpact: '✓ Exact results',                  formal: '✓ Cryptographic',        formalTip: 'Homomorphic encryption provides a formal cryptographic security proof: without the private key, an adversary cannot learn anything about the plaintext from the ciphertext, even with unlimited computation (for information-theoretically secure schemes) or in practice (for BFV/CKKS/BGV).', attackRisk: 'Key management failure',         attackTip: 'The only attack surface is the private key — if it is leaked, stolen, or improperly shared, all encrypted data is immediately exposed. Unlike a database breach (which exposes records in scope), a key compromise is retroactive: it exposes all data ever encrypted with that key.', complexity: 5, complexityTip: 'Cryptographic parameter selection (lattice dimensions, modulus chains) requires deep specialist expertise. Computation is 1,000–1,000,000x slower than plaintext. No broadly accessible deployment frameworks for non-specialists currently exist. Active area of standardization work.', usecase: 'Outsourced analytics without data exposure' },
+      { name: 'Tokenization',           local: '✓ Tokens shareable', interpretable: '✓ Yes (operational)',      utilityImpact: '✓ Operational data preserved',     formal: '✗ No formal guarantee',  attackRisk: 'Vault breach',                   attackTip: 'The token vault is the single point of re-identification. A breach of the vault — or unauthorized vault access by an insider — directly exposes all PII that was ever tokenized, without any additional decryption step needed by the attacker.', complexity: 2, complexityTip: 'Commercial vault services and format-preserving encryption libraries are widely available. Primary complexity is vault access-control governance and key management procedures rather than engineering — well within reach of most IT teams.', usecase: 'Cross-system data linkage without PII' },
+      { name: 'Zero-Knowledge Proofs (ZKP)', local: '✓ Proof only',  interpretable: '~ Binary result only',     utilityImpact: '~ Binary / threshold queries only', utilityTip: 'ZKP is optimized for binary or threshold claims (enrolled/not, eligible/not, meets-threshold/not). Complex analytical queries requiring counts, averages, or distributions require layering differential privacy or other techniques. The tradeoff: maximal privacy protection on what you prove, but limited to what can be expressed as an arithmetic circuit.', formal: '✓ Cryptographic', formalTip: 'ZKP provides a formal cryptographic guarantee: the verifier learns nothing about the underlying data beyond the proven statement. This is arguably stronger than ε-DP for point queries — the verifier receives zero information about the input, not merely "bounded information." The proof is cryptographically unforgeable without knowledge of the witness.', attackRisk: 'Trusted setup / circuit bugs', attackTip: 'Many ZKP systems (zk-SNARKs) require a trusted setup ceremony — if the toxic waste from this ceremony is not destroyed, a malicious actor could forge proofs. Circuit bugs (incorrect encoding of the statement to prove) can also allow invalid proofs to verify. Transparent ZKP systems (STARKs, PLONK) eliminate the trusted setup requirement.', complexity: 5, complexityTip: 'Requires cryptographic engineering expertise, circuit design skills (encoding statements as arithmetic circuits), and ZKP infrastructure. No drop-in libraries for education data use cases currently exist. Proof generation is computationally intensive. Technology and tooling are still maturing rapidly.', usecase: 'Binary eligibility verification without PII disclosure' },
+    ],
+
+    // Traditional de-identification comparison table data (5 methods)
+    tradMethods: [
+      { name: 'Cell Suppression', guarantee: '✗ None',                interpretable: '~ Gaps visible',      utility: '~ Reduced for small groups', attackRisk: 'Subtraction attack',                attackTip: 'An adversary who knows marginal totals can subtract a suppressed cell from a known row or column total to infer its value. Complementary suppression (removing additional cells) is the standard mitigation, but it is incomplete for complex cross-tabulations with many cells.', complexity: 1, complexityTip: 'Well-understood and available in standard reporting tools. Main challenge is implementing complementary suppression correctly for complex cross-tabulations — simple single-cell suppression without complementary suppression can be trivially defeated.', bestFor: 'Published aggregate tables (NCES, FERPA compliance)' },
+      { name: 'Data Masking',     guarantee: '✗ None',                interpretable: '~ Partial (masked)',   utility: '~ Field-level loss',         attackRisk: 'Quasi-identifier combination',      attackTip: 'Combining partially-masked fields with external data sources (voter rolls, social media, public records) can re-identify individuals whose quasi-identifiers (age, ZIP code, gender, grade level) uniquely identify them — even when direct identifiers such as name and SSN are masked.', complexity: 1, complexityTip: 'Field-level masking is available in most ETL and database tools. Primary challenge is identifying all fields requiring masking across the data estate — data discovery and classification is often more complex than the masking itself.', bestFor: 'Sharing operational data internally with restricted fields' },
+      { name: 'Generalization',   guarantee: '✗ None',                interpretable: '✓ Yes (ranges)',       utility: '~ Precision loss',           attackRisk: 'Background knowledge attack',       attackTip: 'An adversary with external information about a specific individual (known age, neighborhood, disability status) can narrow generalized ranges to a single person, defeating the de-identification. Protection degrades as the adversary\'s background knowledge increases.', complexity: 2, complexityTip: 'Requires designing generalization hierarchies for each attribute type (age ranges, ZIP prefix lengths, grade bands). Complexity grows when applied simultaneously across many quasi-identifiers — hierarchy design decisions require domain knowledge.', bestFor: 'HIPAA Safe Harbor de-id; demographic reporting' },
+      { name: 'Perturbation',     guarantee: '✗ None (DP is better)', interpretable: '✓ Yes (distorted)',    utility: '~ Slight distortion',        attackRisk: 'Differencing attack',               attackTip: 'Running two similar queries on overlapping subsets and subtracting the results can cancel out the noise and reveal individual values. Unlike differential privacy, perturbation has no formal bound on how much information is leaked by repeated queries.', complexity: 2, complexityTip: 'Noise addition is straightforward to implement. The challenge is calibrating noise levels to balance utility and privacy without a formal bound — there is no principled way to know if the noise amount chosen is sufficient, unlike differential privacy.', bestFor: 'Federal survey microdata where exact values must be obscured' },
+      { name: 'k-Anonymity',      guarantee: '~ Quasi-ID protection', interpretable: '✓ Yes (generalised)', utility: '~ Reduced',                  attackRisk: 'Homogeneity / background knowledge', attackTip: 'When all k records in a group share the same sensitive attribute value (e.g., all 5 students have IEP status), group membership reveals that attribute with certainty — the homogeneity attack. Separately, an adversary with external knowledge about a specific individual can narrow a k-group to a single person even when sensitive values vary.', complexity: 3, complexityTip: 'Requires quasi-identifier identification, equivalence class computation, and complementary suppression or generalization. Tools such as ARX exist but require expertise to configure and validate. Ongoing re-evaluation needed as datasets change or new quasi-identifiers are identified.', bestFor: 'HIPAA Expert Determination; microdata release with grouping guarantees' },
+    ],
+
+  }, // end compare
+
+  // ── ZKP module ──────────────────────────────────────────────────────────────
+  zkp: {
+    tag:        'Emerging Technique',
+    title:      'Zero-Knowledge Proofs (ZKP)',
+    definition: 'A ZKP lets one party (the Prover) convince another (the Verifier) that a statement is true — without revealing any information beyond the fact of its truth. With no data transmitted, no FERPA disclosure event can occur.',
+
+    tabs: ['① The Analogy', '② Single-Shot Proof', '③ Education Demo', '④ FERPA Workflow', '⑤ Tradeoffs'],
+
+    // ── Section 0: Marble analogy ──────────────────────────────────────────────
+    analogy: {
+      partLabel:      'PART 1 OF 2 · The Analogy: Peggy\'s Marbles',
+      intro:          '<strong>Victor is color-blind.</strong> His friend Peggy claims she can tell the difference between a red and green marble — but she won\'t say which is which (that\'s her secret). How can Peggy <em>prove</em> she knows the difference without telling Victor the secret?<br><br>Victor hides both marbles behind his back, then randomly swaps them — or not. He shows Peggy and asks: <em>"Did I swap them?"</em> Because Peggy can see the colors, she always knows. A faker could only guess (50/50). Run enough rounds and sustained correct answers become statistically overwhelming proof of knowledge.',
+      peggyTitle:     '🧑 Peggy (Prover)',
+      peggyDesc:      'She sees the secret — the true colors.',
+      victorTitle:    '👁️ Victor (Verifier)',
+      victorDesc:     'Color-blind — both look identical to him.',
+      waitingText:    'Waiting to begin. Click <strong>Run Round</strong> — Victor hides the marbles and may swap them.',
+      confidenceLabel:'Victor\'s Confidence (Peggy isn\'t guessing)',
+      roundsLabel:    'Rounds:',
+      interpStates: [
+        { min: 0,  label: 'No evidence yet' },
+        { min: 1,  label: 'Some evidence' },
+        { min: 3,  label: 'Moderate confidence' },
+        { min: 5,  label: 'Strong confidence' },
+        { min: 10, label: 'Near-certain' },
+        { min: 20, label: 'Statistically conclusive' },
+      ],
+      swappedText:    'SWAPPED',
+      notSwappedText: 'NOT swapped',
+      correctText:    'Peggy correctly identified:',
+      guessNote:      'A prover without the knowledge could only guess. Repeated success is proof of knowledge.',
+      marbleLabels:   { red: 'Red', green: 'Green', hidden: '???' },
+      buttons:        { run: '▶ Run Round', runMany: 'Run 10 Rounds', reset: '↺ Reset' },
+    },
+
+    principles: [
+      { id: 'zkp-p-complete', icon: '✅', label: 'Completeness',    colorClass: 'mint',   desc: 'If Peggy truly knows, she always answers correctly. An honest prover never fails.' },
+      { id: 'zkp-p-sound',    icon: '🎲', label: 'Soundness',       colorClass: 'blue',   desc: 'A faker can only guess — 50% per round. After 20 rounds, the odds of sustained cheating are less than 1 in a million.' },
+      { id: 'zkp-p-zk',       icon: '🔒', label: 'Zero-Knowledge',  colorClass: 'purple', desc: 'Victor learns only that Peggy knows — not which marble is red or green. The secret is never revealed.' },
+    ],
+
+    // ── Section 1: Single-shot proof ───────────────────────────────────────────
+    singleShot: {
+      buttons:             { generate: '⚡ Generate Single Proof', reset: '↺ Reset' },
+      intro:               'The marble game requires many rounds of back-and-forth — which builds intuition, but is impractical for a state audit system. Real-world ZKPs solve this with a <strong>non-interactive proof</strong>: the prover computes the entire proof in one step, with no back-and-forth required.',
+      interactiveLabel:    'Interactive (Marble Game)',
+      interactiveSteps:    ['① Prover commits <span style="color:var(--mint)">→</span>', '<span style="color:var(--blue)">← </span>② Verifier sends challenge', '③ Prover responds <span style="color:var(--mint)">→</span>', '<span style="color:var(--blue)">← </span>④ Verifier checks', '<em style="color:var(--text-dim)">…repeat N times</em>'],
+      interactiveNote:     '⚠️ Requires live back-and-forth. Not practical for automated audit systems.',
+      nonInteractiveLabel: 'Non-Interactive (Real ZKP)',
+      nonInteractiveSteps: ['① Prover commits to the data', '② Math function generates challenge', '③ Prover computes full response', '④ Packages into <strong style="color:var(--mint)">one proof object</strong> <span style="color:var(--mint)">→</span>', '<span style="color:var(--blue)">⑤ Verifier checks — done ✓</span>'],
+      nonInteractiveNote:  '✓ One message. No live interaction. Verifiable by anyone, any time.',
+      hashCardTitle:       'How the challenge gets generated without Victor',
+      hashCardBody:        'In the marble game, Victor provides a random challenge live — that\'s what prevents Peggy from cheating. In a non-interactive proof, a <strong>mathematical hash function</strong> takes the commitment itself as input and produces a deterministic, unpredictable challenge. Neither party can manipulate it. The prover still has to demonstrate knowledge; they just do it all at once, with no Victor in the room.',
+      tryItTitle:          'Try it: Generate a single proof',
+      tryItDesc:           'Instead of running rounds, generate one proof that Peggy knows the secret — all at once.',
+      nizkpPlaceholder:    'Click <strong>Generate Proof</strong> to see the single-shot proof protocol.',
+      bridgeNote:          '<strong>The bridge to education data:</strong> In the next section, you\'ll see this same single-shot structure applied to real scenarios — a district system generates one proof that a student meets an eligibility threshold, and an auditor verifies it instantly. No PII travels. No back-and-forth. No FERPA disclosure event.',
+    },
+
+    // NIZKP animation line text. Use {hex32}, {hex16}, {hex24} as placeholders —
+    // app.js replaces these with randHex() calls at render time.
+    nizkpLines: [
+      { color: 'var(--text-dim)', text: '[Prover] Encoding secret knowledge into cryptographic commitment...' },
+      { color: 'var(--mint)',     text: '[Prover] Commitment generated: {hex32}' },
+      { color: 'var(--text-dim)', text: '[Math]   Applying hash function to commitment → deterministic challenge...' },
+      { color: 'var(--blue)',     text: '[Math]   Challenge value: {hex16} <span style="font-size:.7rem">(no live back-and-forth needed)</span>' },
+      { color: 'var(--text-dim)', text: '[Prover] Computing response using secret + challenge...' },
+      { color: 'var(--purple)',   text: '[Prover] Response: {hex24}' },
+      { color: 'var(--text-dim)', text: '[Prover] Packaging {commitment, challenge, response} into proof object...' },
+      { color: 'var(--mint)',     text: '[Proof]  ✓ Single proof object ready. Size: 288 bytes. No PII included.' },
+      { color: '',                text: '' },
+      { color: 'var(--text-dim)', text: '[Verifier] Received proof. Running verification equation...' },
+      { color: 'var(--mint)',     text: '[Verifier] ✓ VALID. Prover knows the secret. Verification time: 4ms.' },
+      { color: 'var(--text-dim)', text: '[Verifier] Secret itself: <strong style="color:var(--coral)">NEVER SEEN. NEVER TRANSMITTED.</strong>' },
+    ],
+
+    // ── Section 2: Education demo ──────────────────────────────────────────────
+    scenariosSub:   'Select a real-world education data scenario. Then step through the ZKP protocol to see how a fact is proven without disclosing the underlying student records.',
+    chanMsgDefault: 'Encrypted proof object only',
+    stepLabels:     ['▶ Step 1: Commit', '▶ Step 2: Challenge', '▶ Step 3: Respond', '▶ Step 4: Verify'],
+    scenarios: [
+      {
+        icon:     '🎓',
+        title:    'Graduation Credential',
+        desc:     'Prove a student meets federal program eligibility thresholds without revealing GPA, credit hours, or identity.',
+        prover:   'District Student Information System',
+        verifier: 'Federal Program Auditor',
+        steps: [
+          { cls: 'mint',  html: '<strong>Commit:</strong> The district system encodes the student\'s complete transcript (GPA, credits, completion date) into a cryptographic commitment — a locked container. The commitment is sent to the auditor. No readable data has been transmitted.' },
+          { cls: 'blue',  html: '<strong>Challenge:</strong> The auditor sends a random challenge value. This prevents the prover from pre-computing a fake proof — the response must incorporate the specific challenge number.' },
+          { cls: 'mint',  html: '<strong>Respond:</strong> The district system computes a response using both the commitment and the student\'s actual records. The math proves the response is correct <em>only if</em> the underlying records satisfy the eligibility threshold.' },
+          { cls: 'amber', html: '<strong>Verify:</strong> The auditor runs the verification equation. It checks out. <span style="color:var(--mint)">✓ Result: Student meets graduation eligibility. No GPA, credit count, or student name was ever transmitted.</span>' },
+        ],
+        chanMsgs: ['Commitment (locked)', 'Random challenge', 'Computed response', '✓ Verified'],
+      },
+      {
+        icon:     '📊',
+        title:    'Title I Income Eligibility',
+        desc:     'Prove household income qualifies for free/reduced lunch without disclosing the actual income figure.',
+        prover:   'District Benefits System',
+        verifier: 'State Education Agency',
+        steps: [
+          { cls: 'mint',  html: '<strong>Commit:</strong> The benefits system encodes the household income figure into a cryptographic commitment. The commitment reveals nothing about the value — it\'s like a sealed envelope with a tamper-evident seal.' },
+          { cls: 'blue',  html: '<strong>Challenge:</strong> The SEA sends a random challenge. The challenge ensures the proof is fresh — it cannot be replayed from a previous verification.' },
+          { cls: 'mint',  html: '<strong>Respond:</strong> The system generates a proof that the income value, when compared against the eligibility threshold, satisfies the condition — without revealing the actual figure or which side of the threshold the family is on.' },
+          { cls: 'amber', html: '<strong>Verify:</strong> SEA runs verification. <span style="color:var(--mint)">✓ Result: Household qualifies for Title I benefits. Actual income figure: never transmitted, never stored by SEA.</span>' },
+        ],
+        chanMsgs: ['Income commitment', 'Fresh challenge', 'Threshold proof', '✓ Eligible — no data retained'],
+      },
+      {
+        icon:     '🔗',
+        title:    'Cross-Agency Enrollment',
+        desc:     'Prove a student is currently enrolled across two state agencies without sharing a student ID or any PII.',
+        prover:   'State Education Data System',
+        verifier: 'Child Welfare Agency',
+        steps: [
+          { cls: 'mint',  html: '<strong>Commit:</strong> The education system generates a cryptographic commitment to the student enrollment record — keyed to the specific student without transmitting any identifier the child welfare agency could link to other records.' },
+          { cls: 'blue',  html: '<strong>Challenge:</strong> The child welfare agency sends a challenge tied to the specific verification request. This prevents the education system from using a pre-generated proof for a different student or time period.' },
+          { cls: 'mint',  html: '<strong>Respond:</strong> The education system proves that an enrollment record matching the query exists and is current — without transmitting the student ID, name, or any linkable identifier.' },
+          { cls: 'amber', html: '<strong>Verify:</strong> Child welfare agency checks the proof. <span style="color:var(--mint)">✓ Result: Student confirmed enrolled as of query date. Zero PII crossed the agency boundary. No FERPA disclosure event triggered.</span>' },
+        ],
+        chanMsgs: ['Anonymous commitment', 'Verification challenge', 'Enrollment proof', '✓ Confirmed — no ID transmitted'],
+      },
+    ],
+
+    // ── Section 3: FERPA workflow ──────────────────────────────────────────────
+    ferpa: {
+      sub:           'A state auditor needs to verify that every student in a district is currently enrolled. Under the legacy workflow, this triggers FERPA\'s audit/evaluation exception — requiring written agreements, PII disclosure, and data breach liability. A ZKP workflow eliminates all three.',
+      legacyLabel:   '⚠️ Legacy Workflow (FERPA Audit Exception)',
+      legacyIcons:   ['📋', '🛑', '⏳', '📤', '🗄️'],
+      legacySteps: [
+        'Auditor submits formal request for student enrollment records (names, IDs, dates)',
+        '<strong style="color:var(--coral)">FERPA Disclosure Triggered.</strong> Written audit/evaluation agreement must be executed before data can be released.',
+        'Administrative delay: legal review, agreement drafting, signature process (days to weeks)',
+        'Raw PII transmitted: student names, DOBs, SSNs or state IDs, enrollment dates',
+        'Auditor now holds a copy of the PII dataset — breach liability surface created',
+      ],
+      legacyResult:  '⚠️ PII disclosed · Written agreement required · Breach liability: HIGH',
+      zkpLabel:      '✅ ZKP Workflow',
+      zkpIcons:      ['📋', '🔐', '💎', '📨', '🚫'],
+      zkpSteps: [
+        'Auditor submits query: <em>"Is every student in this cohort currently enrolled?"</em>',
+        'ZKP Gateway processes the student database <strong>locally</strong>. No records leave the system.',
+        'System generates a compact <strong>verification proof</strong> — a cryptographic object encoding only the yes/no answer.',
+        'Only the proof is transmitted. The auditor receives: <span style="color:var(--mint);font-weight:600">✓ All students enrolled. Proof verified.</span>',
+        'No PII transmitted, no dataset copy created, no FERPA disclosure triggered.',
+      ],
+      zkpResult:      '✅ Zero PII disclosed · No agreement required · Breach liability: LOW',
+      analysisTitle:  'FERPA Analysis',
+      analysisBody:   'Because the ZKP workflow never transmits education records — only a mathematical proof about aggregate properties — it does not trigger a FERPA disclosure event. The audit/evaluation exception (34 C.F.R. § 99.35) requires a written agreement precisely because PII is leaving the institution\'s control. When ZKP is used correctly, no PII leaves. The proof object itself carries no personally identifiable information and is not an education record under FERPA\'s definition.<br><br><span style="color:var(--amber)">⚠️ Important caveat:</span> ZKP is an emerging technology. SEAs considering deployment should consult with legal counsel on FERPA applicability and verify that the specific ZKP implementation provides the privacy guarantees claimed. Standards and regulatory guidance in this area are still developing.',
+    },
+
+    // ── Section 4: Tradeoffs ───────────────────────────────────────────────────
+    tradeoffs: {
+      sub:          'ZKPs offer strong privacy guarantees, but implementation is complex and the technology is still maturing in education data contexts.',
+      whenTitle:    'When ZKP makes sense for an SEA',
+      goodFitLabel: '✅ Good fit',
+      poorFitLabel: '⚠️ Poor fit',
+      tiles: [
+        { label: 'Privacy Protection',         colorClass: 'mint',   rating: 5, text: 'Strongest theoretical privacy guarantee of any PET category. Verifier learns <em>literally nothing</em> beyond the proven statement. No residual data to re-identify. Cryptographic guarantee rather than policy-based protection.' },
+        { label: 'Utility / Accuracy',          colorClass: 'blue',   rating: 3, text: 'High accuracy for <em>binary or threshold queries</em> (enrolled/not, eligible/not). Less suited to complex analytical queries requiring counts, averages, or distributions — those require differential privacy or other techniques layered on top.' },
+        { label: 'Implementation Complexity',   colorClass: 'amber',  rating: 4, text: 'Significantly more complex than tokenization or traditional de-id. Requires cryptographic infrastructure, specialized developer expertise, and careful circuit design. Computational cost (proof generation) is high. Not a drop-in replacement for existing workflows.' },
+        { label: 'Technology Maturity',         colorClass: 'purple', rating: 2, text: 'Rapidly maturing in fintech and identity contexts (Google Wallet uses ZKP for age attestation). Education-specific implementations are early-stage. No established vendor ecosystem for SEA use cases. Standards and FERPA guidance still developing.' },
+      ],
+      goodFit: [
+        'Binary eligibility determinations (enrolled, qualified, compliant)',
+        'Cross-agency queries where data sharing agreements are burdensome',
+        'High-sensitivity populations (special education, child welfare)',
+        'Credential verification (does this person hold this credential?)',
+      ],
+      poorFit: [
+        'Longitudinal research requiring full record access',
+        'Complex analytical queries (distributions, regressions)',
+        'Organizations without cryptographic engineering capacity',
+        'Contexts requiring human-readable audit trails',
+      ],
+    },
+
+    // ── Section 5: Compare (key insight + pointer to main Compare module) ──────
+    compareInsight: {
+      title: 'Key Insight for SEA Practitioners',
+      body:  'ZKP doesn\'t replace the techniques you already use — it addresses a different problem. Suppression, k-anonymity, and differential privacy protect against re-identification in <em>released datasets</em>. ZKP prevents the dataset from leaving at all. Think of it as the difference between "sanitizing what you share" vs. "proving a fact without sharing anything." The two approaches are complementary: an SEA might use differential privacy for public data releases and ZKP for cross-agency eligibility verification — each technique matched to the appropriate use case.',
+    },
+
+    // ── Section 6: Resources ───────────────────────────────────────────────────
+    resourcesIntro: 'Vetted resources for SEA staff and education researchers who want to go deeper on ZKPs — from conceptual primers to technical specifications.',
+    resources: [
+      { icon: '📖', title: 'ZKProof Community Standards',                                         desc: 'The primary open standards body for zero-knowledge proof implementations. Includes practitioner-accessible documentation on proof systems, security properties, and application domains.', tag: 'Standards · Technical', url: '' },
+      { icon: '🏛️', title: 'NIST Post-Quantum Cryptography Standards (NIST IR 8413)',              desc: 'NIST\'s framework for next-generation cryptographic standards, which includes the underlying techniques that power practical ZKP implementations. Relevant for SEAs planning long-term cryptographic infrastructure.', tag: 'Federal · Standards', url: '' },
+      { icon: '🎓', title: '"Proofs, Arguments, and Zero-Knowledge" — Justin Thaler (Georgetown)', desc: 'The most accessible rigorous textbook on ZKPs, freely available online. Part I covers the conceptual foundations without requiring advanced mathematics. Recommended for researchers wanting the formal grounding.', tag: 'Academic · Free', url: '' },
+      { icon: '🔑', title: 'Google Wallet ZKP Age Attestation (Developer Documentation)',          desc: 'A deployed real-world implementation of ZKP for age verification — the closest production analogue to education eligibility verification. Useful for understanding what a practical ZKP credential workflow looks like.', tag: 'Implementation · Industry', url: '' },
+      { icon: '⚖️', title: 'FERPA Audit/Evaluation Exception — 34 C.F.R. § 99.35',                desc: 'The regulatory text governing when PII may be disclosed for audit and evaluation purposes without prior consent. Understanding this provision is prerequisite to analyzing how ZKP might affect FERPA compliance workflows.', tag: 'Legal · FERPA', url: '' },
+    ],
+
+    notes: '<strong>ZKP vs. other formal PETs:</strong> Unlike differential privacy, which bounds how much information is revealed, ZKP reveals <em>zero</em> information about the underlying data beyond the proven claim. Unlike homomorphic encryption, which returns an encrypted computed result, ZKP returns only a proof — not a data value. Choose ZKP when you need to prove a binary claim; choose HE or DP when you need to share computed results.',
+
+    // ── UI labels ─────────────────────────────────────────────────────────────
+    demo: {
+      actorProverLabel:   'Prover',
+      actorVerifierLabel: 'Verifier',
+      resetBtn:           '↺ Reset Scenario',
+      completeBtn:        '✓ Proof Complete',
+    },
+    // Per-tab navigation button labels. Index matches tab number (0–4).
+    // null = no button rendered for that direction.
+    navButtons: [
+      { back: null,                   next: 'Next: Single-Shot Proof →' },
+      { back: '← Back: The Analogy',  next: 'Next: Education Demo →'    },
+      { back: '← Back',               next: 'Next: FERPA Workflow →'    },
+      { back: '← Back',               next: 'Next: Tradeoffs →'         },
+      { back: '← Back',               next: null                        },
+    ],
+  }, // end zkp
 
 }; // end CONTENT
