@@ -3482,10 +3482,6 @@ function renderAbout() {
   <div class="about-body animate-in">
     ${paragraphsHTML}
 
-    <div class="about-disclaimer">
-      <strong>${a.disclaimer.label}</strong>&ensp;${a.disclaimer.body}
-    </div>
-
     <div class="about-explore">
       <div class="about-explore-label">${a.exploreLabel}</div>
       <button class="about-chip" onclick="showModule('dp')">Differential Privacy</button>

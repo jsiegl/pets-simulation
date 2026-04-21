@@ -258,13 +258,8 @@ const CONTENT = {
 
       'Privacy-enhancing technologies — including approaches such as secure multiparty computation, differential privacy, and synthetic data — hold significant promise for enabling data use while reducing risks to individuals. However, these technologies can be difficult to conceptualize and compare in practice. This prototype uses AI-assisted methods (including tools such as Claude Code and Claude Artifacts) to present simplified scenarios, visualizations, and guided explanations intended to make these concepts more accessible to policymakers, researchers, and practitioners.',
 
-      'This project is being released to a limited audience — including state educational agencies, state longitudinal data system leaders, researchers, and education technology providers — for feedback on both the content and the format. It is not intended to provide technical or legal guidance, nor does it represent a comprehensive or definitive treatment of PETs. Rather, it is an experimental supplement to our formal research, designed to explore whether interactive tools can improve understanding and support more informed decision-making.',
+      'This project is being released to a limited audience — including state educational agencies, state longitudinal data system leaders, researchers, and education technology providers — for feedback on both the content and the format. It is not intended to provide technical or legal guidance, nor does it represent a comprehensive or definitive treatment of PETs. Rather, it is an experimental supplement to our formal research, designed to explore whether interactive tools can improve understanding and support more informed decision-making. Please complete the following <a href="https://forms.gle/PCKKiU7uh9BL2Pca8" target="_blank" rel="noopener">brief survey</a> to provide feedback on this resource.',
     ],
-
-    disclaimer: {
-      label: 'Note on AI-generated content:',
-      body:  'As with any use of generative AI, this tool has limitations. The scenarios and explanations presented here are illustrative and may simplify or omit important technical nuances. Users should rely on primary sources, expert consultation, and formal documentation when evaluating PETs for real-world implementation. We welcome feedback on accuracy, clarity, and usability as we continue to assess the role that AI-enabled tools may play in advancing privacy-protective data practices in education.',
-    },
 
     exploreLabel: 'Explore the modules',
   },
