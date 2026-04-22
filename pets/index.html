@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Privacy Enhancing Technologies — Interactive Guide</title>
+
+  <!--
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  FILE LOADING ORDER — do not reorder these tags                     │
+    │                                                                     │
+    │  1. Google Fonts (display + mono typefaces)                         │
+    │  2. styles.css  — all layout and visual styles                      │
+    │  3. d3 v7       — charting library used by DP, FL modules           │
+    │  4. content.js  — TIPS and CONTENT globals (must precede app.js)   │
+    │  5. app.js      — simulation logic (reads TIPS/CONTENT at runtime)  │
+    └─────────────────────────────────────────────────────────────────────┘
+  -->
+
+  <!-- 1. Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- 2. Styles -->
+  <link rel="stylesheet" href="styles.css?v=04-21-2026:09:00">
+</head>
+<body>
+
+  <!-- ── Floating tooltip panel ──────────────────────────────────────────────
+       Positioned by app.js showTooltip(). Hidden by default via CSS opacity:0.
+       The ✕ close button appears only when the tooltip is pinned (click-locked).
+  ──────────────────────────────────────────────────────────────────────────── -->
+  <div id="tt" role="tooltip" aria-live="polite">
+    <div id="tt-term"></div>
+    <div id="tt-body"></div>
+    <button id="tt-close" onclick="hideTooltip(true)">✕</button>
+  </div>
+
+  <!-- ── App shell ───────────────────────────────────────────────────────────
+       .app is a flex column filling the full viewport height.
+       header → nav → main (flex:1) stacks top-to-bottom.
+  ──────────────────────────────────────────────────────────────────────────── -->
+  <div class="app">
+
+    <!-- Site header — logo + title are a single home button (click → about page) -->
+    <header>
+      <button class="header-home" onclick="showModule('about')" title="Return to About" aria-label="Go to About page">
+        <div class="logo-mark">🔐</div>
+        <div>
+          <h1>Privacy Enhancing Technologies — Interactive Guide
+            <span style="font-weight:400;font-size:0.75rem;color:var(--text-dim);font-family:var(--font-mono)">
+              v04-21-2026:09:00
+            </span>
+          </h1>
+          <p>For state education agency data analysts &amp; researchers and policy staff</p>
+        </div>
+      </button>
+    </header>
+
+    <!-- Module navigation bar
+         Button order here must match the `idx` array in showModule() in app.js.
+         To add a new module: add a button here AND register it in the modules
+         object at the bottom of app.js.
+    -->
+    <nav id="main-nav">
+      <span class="nav-group-label" style="color:var(--blue)">Privacy-Enhancing Technologies</span>
+
+      <button class="nav-btn active" onclick="showModule('dp')">Differential Privacy</button>
+      <button class="nav-btn" onclick="showModule('pprl')">Privacy-Preserving Record Linkage</button>
+      <button class="nav-btn" onclick="showModule('mpc')">Secure Multi-Party Comp.</button>
+      <button class="nav-btn" onclick="showModule('fl')">Federated Learning</button>
+      <button class="nav-btn" onclick="showModule('synth')">Synthetic Data</button>
+      <button class="nav-btn" onclick="showModule('tee')">Trusted Execution Env.</button>
+      <button class="nav-btn" onclick="showModule('he')">Homomorphic Encryption</button>
+      <button class="nav-btn" onclick="showModule('tok')">Tokenization</button>
+      <button class="nav-btn" onclick="showModule('zkp')">Zero-Knowledge Proofs (ZKP) <span style="font-size:0.6rem;font-weight:700;letter-spacing:0.05em;padding:1px 5px;border-radius:6px;background:rgba(176,111,255,0.15);color:var(--purple);border:1px solid rgba(176,111,255,0.35);vertical-align:middle;margin-left:3px">EMERGING</span></button>
+
+      <span style="flex-basis:100%;height:0"></span>
+      <span class="nav-group-label" style="color:var(--amber)">Traditional De-identification</span>
+      <button class="nav-btn trad-btn" onclick="showModule('trad')">Suppression · Masking · Generalization</button>
+
+      <span class="nav-divider"></span>
+      <button class="nav-btn compare-btn" onclick="showModule('compare')">⊞ Compare All</button>
+    </nav>
+
+    <!-- Main content area — render functions inject HTML here via innerHTML -->
+    <main>
+      <div id="module-content"></div>
+    </main>
+
+  </div><!-- /.app -->
+
+  <!-- ── Theme toggle — fixed top-right ─────────────────────────────────────────
+       Clicking toggles class "light-mode" on <body>. State is persisted to
+       localStorage so the preference survives page reloads.
+  ──────────────────────────────────────────────────────────────────────────── -->
+  <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light / dark mode" aria-label="Toggle light/dark mode">
+    <span class="toggle-icon" id="theme-icon">☀</span>
+    <div class="toggle-track"><div class="toggle-knob"></div></div>
+    <span id="theme-label">Light</span>
+  </button>
+
+  <!-- 3. D3 v7 — loaded from local file (d3.min.js in the same directory).
+       Used only by the Differential Privacy (bar chart) and Federated Learning
+       (network diagram) modules. If those modules fail to render, confirm that
+       d3.min.js is present alongside index.html. A CDN fallback is not configured. -->
+  <script src="./d3.min.js"></script>
+
+  <!-- 4. Content — TIPS and CONTENT globals (must load before app.js) -->
+  <script src="content.js?v=04-21-2026:09:00"></script>
+
+  <!-- 5. App logic — simulation, render functions, interactivity -->
+  <script src="app.js?v=04-21-2026:09:00"></script>
+
+</body>
+</html>
