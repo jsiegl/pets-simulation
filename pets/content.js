@@ -262,6 +262,31 @@ const CONTENT = {
     ],
 
     exploreLabel: 'Explore the modules',
+
+    startHere: {
+      label: 'New to PETs? Start here',
+      intro: 'If you\'re new to privacy-enhancing technologies, we recommend beginning with these three modules in order:',
+      pathway: [
+        { key: 'trad',  step: '1', label: 'Traditional De-identification', note: 'The familiar baseline — understand what current de-id does and where it falls short.' },
+        { key: 'dp',    step: '2', label: 'Differential Privacy',          note: 'The foundational formal privacy technique that underpins many modern PETs.' },
+        { key: 'synth', step: '3', label: 'Synthetic Data',                note: 'Applies formal privacy guarantees to generate shareable, research-ready datasets.' },
+      ],
+    },
+
+    // Module list drives the "Explore the modules" chip row.
+    // level: 'Beginner' | 'Intermediate' | 'Advanced'
+    moduleList: [
+      { key: 'dp',    label: 'Differential Privacy',                 level: 'Intermediate' },
+      { key: 'pprl',  label: 'Privacy-Preserving Record Linkage',    level: 'Intermediate' },
+      { key: 'mpc',   label: 'Secure Multi-Party Computation',        level: 'Advanced'     },
+      { key: 'fl',    label: 'Federated Learning',                    level: 'Intermediate' },
+      { key: 'synth', label: 'Synthetic Data',                        level: 'Intermediate' },
+      { key: 'tee',   label: 'Trusted Execution Environments',        level: 'Intermediate' },
+      { key: 'he',    label: 'Homomorphic Encryption',                level: 'Advanced'     },
+      { key: 'tok',   label: 'Tokenization',                          level: 'Beginner'     },
+      { key: 'zkp',   label: 'Zero-Knowledge Proofs (ZKP)',           level: 'Advanced'     },
+      { key: 'trad',  label: 'Traditional De-identification',         level: 'Beginner'     },
+    ],
   },
 
   // ── Module 1: Differential Privacy ────────────────────────────────────────
@@ -307,6 +332,8 @@ const CONTENT = {
         'Laplace noise sampled (scale = 1/ε)',
         'Noisy aggregate returned to analyst',
       ],
+
+      runQueryHint: 'Chart shows true values until you run your first query. Each run spends ε from your budget.',
 
       tradeoffs: [
         ['Privacy strength',          'Tunable (ε)',    'val-med'],
@@ -355,7 +382,7 @@ const CONTENT = {
   pprl: {
     tag:        'Module 2 of 8',
     title:      'Privacy-Preserving Record Linkage',
-    definition: 'PPRL lets two agencies find the same individuals across datasets by comparing <em>encoded identifiers</em> (such as Bloom filters) — without either party revealing the underlying names, dates of birth, or other PII to the other.',
+    definition: 'PPRL lets two agencies find the same individuals across datasets by comparing <em>encoded identifiers</em> (such as cryptographic hash encodings) — without either party revealing the underlying names, dates of birth, or other PII to the other.',
     useCase:    'An SLDS links K–12 enrollment records to postsecondary enrollment and workforce data to track long-term outcomes, without a shared student ID and without exchanging personally identifiable information.',
 
     tradeoffs: [
@@ -367,7 +394,7 @@ const CONTENT = {
       ['Output type',               'Linked record pairs — no PII crosses boundary', 'val-low'],
     ],
 
-    notes: '<strong>How the matching works in this simulation:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Matching is driven by bigram similarity, not raw identifiers.</strong> Each record is compared using the Sørensen–Dice coefficient over character bigrams (overlapping two-character pairs from the normalised name and date of birth). Two records link if their similarity score meets or exceeds 60%. This is mathematically equivalent to what Bloom filter PPRL computes: the bit-array Dice distance approximates bigram Dice similarity over the same n-gram set.</li><li><strong>Abbreviated names match at lower scores than exact pairs.</strong> "J. Okafor / 2003-08-21" and "James Okafor / 2003-08-21" share most of their DOB bigrams and several name bigrams — enough to exceed the threshold even though the names are not identical. This is the key property of Bloom filter PPRL: it tolerates the real-world variation in how agencies record the same person\'s name.</li><li><strong>The similarity score is shown on each matched row.</strong> Scores below 100% reflect name abbreviation or variation, not a weaker privacy guarantee — the privacy property depends on the encoding, not the match score.</li></ul><strong>What is simplified relative to production PPRL:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real Bloom filters use bit arrays.</strong> In production (e.g. the Schnell et al. scheme), each bigram is hashed into multiple bit positions in a fixed-length bit vector. The hex strings shown are a visual proxy — they capture the deterministic encoding property but not the bit-array structure or the hardening steps (e.g. record-level salting, XOR folding) that prevent hash reversal.</li><li><strong>Threshold tuning is a privacy–utility tradeoff.</strong> A lower threshold catches more true matches but risks false positives (linking different people). A higher threshold reduces false positives but misses more true matches. In a real deployment, threshold selection involves iterative testing against ground-truth linked records and is a key governance decision.</li></ul>',
+    notes: '<strong>How the matching works in this simulation:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Matching is driven by bigram similarity, not raw identifiers.</strong> Each record is compared using the Sørensen–Dice coefficient over character bigrams (overlapping two-character pairs from the normalised name and date of birth). Two records link if their similarity score meets or exceeds 60%. This is mathematically equivalent to what Bloom filter PPRL computes: the bit-array Dice distance approximates bigram Dice similarity over the same n-gram set.</li><li><strong>Abbreviated names match at lower scores than exact pairs.</strong> "J. Okafor / 2003-08-21" and "James Okafor / 2003-08-21" share most of their DOB bigrams and several name bigrams — enough to exceed the threshold even though the names are not identical. This is the key property of Bloom filter PPRL: it tolerates the real-world variation in how agencies record the same person\'s name.</li><li><strong>The similarity score is shown on each matched row.</strong> Scores below 100% reflect name abbreviation or variation, not a weaker privacy guarantee — the privacy property depends on the encoding, not the match score.</li></ul><strong>What is simplified relative to production PPRL:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real Bloom filters use bit arrays.</strong> In production (e.g. the Schnell et al. scheme), each bigram is hashed into multiple bit positions in a fixed-length bit vector. The hex strings shown are a visual proxy — they capture the deterministic encoding property but not the bit-array structure or the hardening steps (e.g. record-level salting, XOR folding) that prevent hash reversal.</li><li><strong>Threshold tuning is a privacy–utility tradeoff.</strong> A lower threshold catches more true matches but risks false positives (linking different people). A higher threshold reduces false positives but misses more true matches. In a real deployment, threshold selection involves iterative testing against ground-truth linked records and is a key governance decision.</li><li><strong>Bloom filters are not the current state of the art.</strong> Early PPRL implementations used Bloom filters; modern systems use more attack-resistant encodings (CLK, HMAC-based schemes, and others) that are less susceptible to frequency and cryptanalytic attacks. When evaluating vendors, ask about their encoding scheme and known vulnerabilities.</li></ul>',
 
     resources: [
       // NIH/NIA strategy and recommendations report — practical PPRL for government agencies
@@ -388,6 +415,8 @@ const CONTENT = {
     definition: 'MPC allows multiple parties to jointly compute a result over their combined data — such as a district average or a merged statistic — without any party revealing their private input to the others.',
     useCase:    'Three school districts want to compute a regional graduation rate to benchmark against state targets, without sharing their individual student outcome data.',
 
+    revealToggleLabel: 'Show true values (instructional use only — these scores are not disclosed to any party during the protocol)',
+
     // School cards shown in the simulation — edit name, score, or color freely.
     // color values must be valid CSS (var(--coral), var(--blue), var(--amber), etc.)
     schools: [
@@ -400,7 +429,7 @@ const CONTENT = {
       ['Privacy strength',          'High',          'val-low'],
       ['Data utility',              'Exact result',  'val-low'],
       ['Data stays local?',         'Yes',           'val-low'],
-      ['3rd party needed?',         'No',            'val-low'],
+      ['3rd party needed?',         '<span class="tip-lbl" data-tip-body="Theoretical SMPC requires no trusted third party, but most deployed systems use a coordinator or broker to orchestrate the protocol.">Optional (protocol-dependent)<i class="tip-icon">i</i></span>', 'val-med'],
       ['Implementation complexity', 'Very High',     'val-high'],
       ['Output type',               'Aggregate only (result of agreed computation)', 'val-low'],
     ],
@@ -466,11 +495,11 @@ const CONTENT = {
   synth: {
     tag:        'Module 5 of 8',
     title:      'Synthetic Data Generation',
-    definition: 'Synthetic data is artificially generated to match the <em>statistical properties</em> of a real dataset — distributions, correlations, and patterns — while containing no records from real individuals, eliminating re-identification risk.',
+    definition: 'Synthetic data is artificially generated to match the <em>statistical properties</em> of a real dataset — distributions, correlations, and patterns — while containing no records from real individuals, substantially reducing re-identification risk.',
     useCase:    'A state education agency releases a synthetic version of its longitudinal student dataset so researchers can build and test analytic tools without accessing any real student records.',
 
     tradeoffs: [
-      ['Privacy strength',          'Very High',                       'val-low'],
+      ['Privacy strength',          'High (model-dependent)',           'val-med'],
       ['Data utility',              'Medium (no individual records)',  'val-med'],
       ['Data stays local?',         'Synthetic can be shared',         'val-low'],
       ['3rd party needed?',         'No',                              'val-low'],
@@ -502,6 +531,7 @@ const CONTENT = {
       { metric: '% With IEP',        real: '16.7%', synthetic: '16.7%', match: '✓ Yes' },
       { metric: 'Any real student?', real: 'Yes',   synthetic: 'No',    match: '✓ Protected' },
     ],
+    statTableNote: 'Privacy protection depends on the generation method and dataset size — small subgroups remain at risk.',
 
     // ── Advanced panel: DP-trained synthetic data ──────────────────────────────
     dpAdvanced: {
@@ -567,7 +597,7 @@ const CONTENT = {
   he: {
     tag:        'PET Module 7 of 8',
     title:      'Homomorphic Encryption',
-    definition: 'Homomorphic encryption (HE) allows a server to perform computations — additions, averages, comparisons — directly on <em>encrypted data</em>, returning an encrypted result. The server never sees the plaintext values at any point.',
+    definition: 'Homomorphic encryption (HE) allows a server to perform computations — additions, multiplications, and averages (and, with significant overhead, comparisons) — directly on <em>encrypted data</em>, returning an encrypted result. The server never sees the plaintext values at any point.',
     useCase:    'An SEA outsources analytics to a cloud vendor. Student records are encrypted before upload; the vendor computes aggregate statistics on ciphertext and returns encrypted results that only the SEA can decrypt — the vendor learns nothing about individual students.',
 
     // Text for the coral warning callout about FHE performance limitations
@@ -600,7 +630,7 @@ const CONTENT = {
   tok: {
     tag:        'PET Module 8 of 8',
     title:      'Tokenization',
-    definition: 'Tokenization replaces sensitive identifiers — names, SSNs, student IDs — with opaque <em>random tokens</em> stored in a secure vault. Systems can process and link records using tokens without ever touching the underlying PII. Only an authorized vault lookup can reverse a token.',
+    definition: 'Tokenization replaces sensitive identifiers — names, SSNs, student IDs — with opaque, consistent <em>pseudorandom tokens</em> stored in a secure vault. The same identifier always maps to the same token, enabling cross-system linkage without exposing the underlying PII. Only an authorized vault lookup can reverse a token.',
     useCase:    'A state replaces student SSNs and names with tokens before sharing data with postsecondary and workforce partners. Each partner works with tokens; only the state vault can re-link tokens to real identities for authorized purposes.',
 
     // Text for the blue informational callout comparing tokenization vs. encryption
@@ -808,7 +838,16 @@ const CONTENT = {
 
     // PETs radar panel title and description
     petsRadarTitle:       'Privacy-Enhancing Technologies — Multi-Dimension Radar',
-    petsRadarDescription: 'Each polygon represents one PET scored 1–5 on five dimensions. A larger area means better overall profile across these axes — but the right technique depends on your specific threat model and constraints. <strong>Click any technique in the legend to isolate it.</strong>',
+    petsRadarDescription: 'Each polygon represents one PET scored 1–5 on five dimensions. A larger area means better overall profile across these axes — but the right technique depends on your specific threat model and constraints. <strong>Click any technique in the legend to isolate it. Hover an axis label for a description.</strong>',
+
+    // Tooltip descriptions for each axis spoke in the PETs radar (order must match axes array in drawCompareRadar).
+    petsRadarAxisTips: [
+      { term: 'Privacy Strength',          body: 'How robustly the technique protects against re-identification or inference. 5 = formal mathematical guarantee (ε-DP or cryptographic proof). 1 = heuristic or no formal protection.' },
+      { term: 'Data Utility',              body: 'How much analytical value is preserved after applying the technique. 5 = full result accuracy, no distortion. 1 = binary output only or significant precision loss.' },
+      { term: 'Ease of Implementation',    body: 'Engineering and governance burden to deploy correctly. 5 = drop-in libraries exist, minimal expertise needed. 1 = requires specialist cryptographers and dedicated infrastructure.' },
+      { term: 'Data Stays Local',          body: 'Whether raw student records leave the originating institution. 5 = raw data never leaves. 1 = raw records must be transmitted to a third party to compute the result.' },
+      { term: 'Formal Guarantee',          body: 'Whether privacy protection is backed by a mathematical proof. 5 = proven guarantee (ε-DP, cryptographic). 1 = no formal guarantee — protection is heuristic or implementation-dependent.' },
+    ],
 
     // Traditional De-ID radar panel title, description, and scores.
     // Axes: Privacy Strength, Data Utility, Small Group Protection,
@@ -817,7 +856,16 @@ const CONTENT = {
     // mathematical privacy guarantees. Adjust scores here to update the chart.
     tradRadar: {
       title:       'Traditional De-identification — Multi-Dimension Radar',
-      description: 'Each polygon scores one technique 1–5 across five operational dimensions. Note that all five techniques score low on <strong>Attack Resistance</strong> — none carry formal mathematical privacy guarantees. Use this chart to understand where each method excels operationally, not as a measure of absolute privacy strength. <strong>Click any technique in the legend to isolate it.</strong>',
+      description: 'Each polygon scores one technique 1–5 across five operational dimensions. Note that all five techniques score low on <strong>Attack Resistance</strong> — none carry formal mathematical privacy guarantees. Use this chart to understand where each method excels operationally, not as a measure of absolute privacy strength. <strong>Click any technique in the legend to isolate it. Hover an axis label for a description.</strong>',
+
+      // Tooltip descriptions for each axis spoke (order must match axes array in drawTradRadar).
+      axisTips: [
+        { term: 'Privacy Strength',        body: 'How strongly the technique protects individual records from re-identification. 5 = robust individual protection. 1 = minimal — easily defeated with external data sources.' },
+        { term: 'Data Utility',            body: 'How much analytical value is preserved after applying the technique. 5 = full utility retained. 1 = significant information loss that affects decision-making.' },
+        { term: 'Small Group Protection',  body: 'Protection for rare subgroups — students with disabilities, small LEAs, or unusual demographic combinations. 5 = strong protection. 1 = small groups remain highly vulnerable to re-identification.' },
+        { term: 'Ease of Implementation',  body: 'Operational burden to deploy. 5 = available in standard reporting tools, minimal expertise needed. 1 = requires specialist knowledge and significant configuration effort.' },
+        { term: 'Attack Resistance',       body: 'Resistance to re-identification via combining fields, using background knowledge, or differencing attacks. All traditional methods score low — none carry formal mathematical privacy guarantees.' },
+      ],
       techniques: [
         { name: 'Cell Suppression', color: 'var(--blue)',   bgColor: 'rgba(77,159,255,0.13)',  scores: [2, 4, 5, 5, 2] },
         { name: 'Data Masking',     color: 'var(--amber)',  bgColor: 'rgba(255,201,64,0.13)',  scores: [3, 3, 1, 5, 2] },
@@ -859,7 +907,7 @@ const CONTENT = {
   zkp: {
     tag:        'Emerging Technique',
     title:      'Zero-Knowledge Proofs (ZKP)',
-    definition: 'A ZKP lets one party (the Prover) convince another (the Verifier) that a statement is true — without revealing any information beyond the fact of its truth. With no data transmitted, no FERPA disclosure event can occur.',
+    definition: 'A ZKP lets one party (the Prover) convince another (the Verifier) that a statement is true — without revealing any information beyond the fact of its truth. Because no underlying data is transmitted, ZKP minimizes the risk of a FERPA disclosure — though practitioners should consult legal counsel on whether the proof itself constitutes a record disclosure.',
 
     tabs: ['① The Analogy', '② Single-Shot Proof', '③ Education Demo', '④ FERPA Workflow', '⑤ Tradeoffs'],
 

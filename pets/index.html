@@ -26,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <!-- 2. Styles -->
-  <link rel="stylesheet" href="styles.css?v=04-22-2026">
+  <link rel="stylesheet" href="styles.css?v=04-23-2026i">
 </head>
 <body>
 
@@ -53,7 +53,7 @@
         <div>
           <h1>Privacy Enhancing Technologies — Interactive Guide
             <span style="font-weight:400;font-size:0.75rem;color:var(--text-dim);font-family:var(--font-mono)">
-              v04-22-2026
+              v04-23-2026
             </span>
           </h1>
           <p>For state education agency data analysts &amp; researchers and policy staff</p>
@@ -61,36 +61,47 @@
       </button>
     </header>
 
-    <!-- Module navigation bar
-         Button order here must match the `idx` array in showModule() in app.js.
-         To add a new module: add a button here AND register it in the modules
-         object at the bottom of app.js.
+    <!-- Module navigation sidebar + main content
+         Button order in nav must match the `idx` array in showModule() in app.js.
+         To add a module: add a button here AND register it in the modules object in app.js.
     -->
-    <nav id="main-nav">
-      <span class="nav-group-label" style="color:var(--blue)">Privacy-Enhancing Technologies</span>
+    <div class="app-body">
 
-      <button class="nav-btn active" onclick="showModule('dp')">Differential Privacy</button>
-      <button class="nav-btn" onclick="showModule('pprl')">Privacy-Preserving Record Linkage</button>
-      <button class="nav-btn" onclick="showModule('mpc')">Secure Multi-Party Comp.</button>
-      <button class="nav-btn" onclick="showModule('fl')">Federated Learning</button>
-      <button class="nav-btn" onclick="showModule('synth')">Synthetic Data</button>
-      <button class="nav-btn" onclick="showModule('tee')">Trusted Execution Env.</button>
-      <button class="nav-btn" onclick="showModule('he')">Homomorphic Encryption</button>
-      <button class="nav-btn" onclick="showModule('tok')">Tokenization</button>
-      <button class="nav-btn" onclick="showModule('zkp')">Zero-Knowledge Proofs (ZKP) <span style="font-size:0.6rem;font-weight:700;letter-spacing:0.05em;padding:1px 5px;border-radius:6px;background:rgba(176,111,255,0.15);color:var(--purple);border:1px solid rgba(176,111,255,0.35);vertical-align:middle;margin-left:3px">EMERGING</span></button>
+      <nav id="main-nav">
+        <!-- Collapse / expand toggle — always visible, even when sidebar is collapsed -->
+        <div class="nav-toggle-row">
+          <button id="nav-toggle" onclick="toggleNav()" title="Collapse navigation" aria-label="Toggle navigation sidebar">◀</button>
+        </div>
 
-      <span style="flex-basis:100%;height:0"></span>
-      <span class="nav-group-label" style="color:var(--amber)">Traditional De-identification</span>
-      <button class="nav-btn trad-btn" onclick="showModule('trad')">Suppression · Masking · Generalization</button>
+        <div class="nav-group">
+          <span class="nav-group-label" style="color:var(--blue)">Privacy-Enhancing Technologies</span>
+          <button class="nav-btn active" onclick="showModule('dp')">Differential Privacy</button>
+          <button class="nav-btn" onclick="showModule('pprl')">Privacy-Preserving Record Linkage</button>
+          <button class="nav-btn" onclick="showModule('mpc')">Secure Multi-Party Computation</button>
+          <button class="nav-btn" onclick="showModule('fl')">Federated Learning</button>
+          <button class="nav-btn" onclick="showModule('synth')">Synthetic Data</button>
+          <button class="nav-btn" onclick="showModule('tee')">Trusted Execution Environments</button>
+          <button class="nav-btn" onclick="showModule('he')">Homomorphic Encryption</button>
+          <button class="nav-btn" onclick="showModule('tok')">Tokenization</button>
+          <button class="nav-btn" onclick="showModule('zkp')">Zero-Knowledge Proofs (ZKP) <span style="font-size:0.6rem;font-weight:700;letter-spacing:0.05em;padding:1px 5px;border-radius:6px;background:rgba(176,111,255,0.15);color:var(--purple);border:1px solid rgba(176,111,255,0.35);vertical-align:middle;margin-left:3px">EMERGING</span></button>
+        </div>
 
-      <span class="nav-divider"></span>
-      <button class="nav-btn compare-btn" onclick="showModule('compare')">⊞ Compare All</button>
-    </nav>
+        <div class="nav-group">
+          <span class="nav-group-label" style="color:var(--amber)">Traditional De-identification</span>
+          <button class="nav-btn trad-btn" onclick="showModule('trad')">Suppression · Masking · Generalization</button>
+        </div>
 
-    <!-- Main content area — render functions inject HTML here via innerHTML -->
-    <main>
-      <div id="module-content"></div>
-    </main>
+        <div class="nav-group">
+          <button class="nav-btn compare-btn" onclick="showModule('compare')">⊞ Compare All</button>
+        </div>
+      </nav>
+
+      <!-- Main content area — render functions inject HTML here via innerHTML -->
+      <main>
+        <div id="module-content"></div>
+      </main>
+
+    </div><!-- /.app-body -->
 
   </div><!-- /.app -->
 
@@ -111,10 +122,10 @@
   <script src="./d3.min.js"></script>
 
   <!-- 4. Content — TIPS and CONTENT globals (must load before app.js) -->
-  <script src="content.js?v=04-22-2026"></script>
+  <script src="content.js?v=04-23-2026"></script>
 
   <!-- 5. App logic — simulation, render functions, interactivity -->
-  <script src="app.js?v=04-22-2026"></script>
+  <script src="app.js?v=04-23-2026"></script>
 
 </body>
 </html>

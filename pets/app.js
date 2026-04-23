@@ -236,7 +236,7 @@ const MODULE_FNS = [
   'dpRunQuery','dpResetBudget','dpUpdateBudgetMax','dpShowTab',
   'ldpRunSurvey','ldpReset',
   'pprlLink','pprlReset','pprlToggleAdversary',
-  'mpcRun','mpcReset',
+  'mpcRun','mpcReset','mpcToggleReveal',
   'flRun',
   'synthToggle','dpPhase','dpUpdateEps',
   'teeRun','teeReset',
@@ -557,6 +557,7 @@ function renderDP() {
             </div>
           </div>
         </div>
+        ${g.runQueryHint ? `<p style="font-size:.74rem;color:var(--text-dim);line-height:1.5;margin-bottom:8px;padding:6px 8px;background:var(--panel-alt,var(--panel));border:1px solid var(--border);border-radius:4px">${g.runQueryHint}</p>` : ''}
         <button class="btn btn-mint" id="dp-run-btn" onclick="dpRunQuery()" style="width:100%">▶ Run Query</button>
         <div class="step-list" style="margin-top:12px" id="dp-steps">
           <div class="step" id="dp-s1"><div class="step-num">1</div><div>${g.steps[0]}</div></div>
@@ -1218,6 +1219,10 @@ function renderMPC() {
         <div style="font-size:0.65rem;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px">Avg. score: PRIVATE</div>
       </div>`).join('')}
     </div>
+    <label style="display:inline-flex;align-items:center;gap:7px;font-size:0.72rem;color:var(--text-dim);cursor:pointer;user-select:none;padding:6px 0 2px">
+      <input type="checkbox" id="mpc-reveal-toggle" onchange="mpcToggleReveal()" style="cursor:pointer;accent-color:var(--mint)">
+      ${c.revealToggleLabel}
+    </label>
     <div style="margin-bottom:10px">
       <div class="panel-title">${TIP('secret-share','Secret Shares Exchanged')}</div>
       <div class="share-flow" id="mpc-shares">
@@ -1346,11 +1351,32 @@ function renderMPC() {
     $('mpc-note').textContent = '';
     $('mpc-shares').innerHTML = `<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim)">No shares yet — click Run Protocol</span>`;
     $('mpc-reconstruction').innerHTML = '';
+    const revealCb = $('mpc-reveal-toggle');
+    if (revealCb) revealCb.checked = false;
     schools.forEach((s, i) => {
       const el = $(`mpc-score-${i}`);
       el.textContent = '';
       el.className = 'school-score hidden-score';
       el.nextElementSibling.textContent = 'Avg. score: PRIVATE';
+    });
+  };
+
+  window.mpcToggleReveal = function() {
+    const checked = $('mpc-reveal-toggle').checked;
+    schools.forEach((s, i) => {
+      const el = $(`mpc-score-${i}`);
+      const lbl = el.nextElementSibling;
+      if (checked) {
+        el.textContent = s.score;
+        el.className = 'school-score revealed';
+        el.style.color = s.color;
+        lbl.textContent = `True score: ${s.score}`;
+      } else if (phase < 2) {
+        el.textContent = '';
+        el.className = 'school-score hidden-score';
+        el.style.color = '';
+        lbl.textContent = 'Avg. score: PRIVATE';
+      }
     });
   };
 }
@@ -1557,6 +1583,7 @@ function renderSynth() {
         </tr>`).join('')}
       </tbody>
     </table>
+    ${c.statTableNote ? `<p style="font-size:.75rem;color:var(--text-dim);line-height:1.5;margin-top:8px">⚠ ${c.statTableNote}</p>` : ''}
   </div>
 
   ${tradeoffs(c.tradeoffs)}
@@ -2596,14 +2623,20 @@ function drawTradRadar() {
     const lx = CX + labelR * Math.cos(angle);
     const ly = CY + labelR * Math.sin(angle);
     const lines = axisLabel.split('\n');
+    const axisTip = (cr.axisTips || [])[i];
     const textEl = svg.append('text')
       .attr('x', lx)
       .attr('y', ly - (lines.length - 1) * 7)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .style('font-size', '10px')
-      .style('fill', 'var(--text-dim)')
-      .style('font-family', 'var(--font-mono)');
+      .style('fill', axisTip ? 'var(--text)' : 'var(--text-dim)')
+      .style('font-family', 'var(--font-mono)')
+      .style('cursor', axisTip ? 'help' : null)
+      .style('pointer-events', axisTip ? 'all' : null);
+    if (axisTip) {
+      textEl.attr('data-tip-term', axisTip.term).attr('data-tip-body', axisTip.body);
+    }
     lines.forEach((line, li) => {
       textEl.append('tspan').attr('x', lx).attr('dy', li === 0 ? 0 : 13).text(line);
     });
@@ -2937,14 +2970,20 @@ function drawCompareRadar() {
     const lx = CX + labelR * Math.cos(angle);
     const ly = CY + labelR * Math.sin(angle);
     const lines = axisLabel.split('\n');
+    const axisTip = (CONTENT.compare.petsRadarAxisTips || [])[i];
     const textEl = svg.append('text')
       .attr('x', lx)
       .attr('y', ly - (lines.length - 1) * 7)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .style('font-size', '10px')
-      .style('fill', 'var(--text-dim)')
-      .style('font-family', 'var(--font-mono)');
+      .style('fill', axisTip ? 'var(--text)' : 'var(--text-dim)')
+      .style('font-family', 'var(--font-mono)')
+      .style('cursor', axisTip ? 'help' : null)
+      .style('pointer-events', axisTip ? 'all' : null);
+    if (axisTip) {
+      textEl.attr('data-tip-term', axisTip.term).attr('data-tip-body', axisTip.body);
+    }
     lines.forEach((line, li) => {
       textEl.append('tspan').attr('x', lx).attr('dy', li === 0 ? 0 : 13).text(line);
     });
@@ -3472,6 +3511,30 @@ function renderAbout() {
     .map(p => `<p>${p}</p>`)
     .join('\n    ');
 
+  const levelColor = { Beginner: 'var(--mint)', Intermediate: 'var(--amber)', Advanced: 'var(--coral)' };
+
+  const sh = a.startHere;
+  const startHereHTML = `
+    <div style="margin:20px 0 24px;padding:14px 18px;border:1px solid var(--mint);border-radius:8px;background:color-mix(in srgb,var(--mint) 7%,transparent)">
+      <div style="font-size:.75rem;font-weight:700;color:var(--mint);letter-spacing:.05em;margin-bottom:5px">${sh.label}</div>
+      <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:12px;line-height:1.5">${sh.intro}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${sh.pathway.map((p, i) => `
+          <button class="about-chip" onclick="showModule('${p.key}')" title="${p.note}" style="border-color:var(--mint);padding-top:8px">
+            <span style="display:block;font-size:.6rem;font-weight:700;color:var(--mint);letter-spacing:.06em;margin-bottom:3px">STEP ${p.step}</span>
+            ${p.label}
+          </button>${i < sh.pathway.length - 1 ? '<span style="color:var(--text-dim);font-size:1.1rem;line-height:1">→</span>' : ''}
+        `).join('')}
+      </div>
+    </div>`;
+
+  const chipsHTML = a.moduleList.map(m => {
+    const col = levelColor[m.level] || 'var(--text-dim)';
+    return `<button class="about-chip" onclick="showModule('${m.key}')">
+        ${m.label}<span style="display:inline-block;font-size:.6rem;font-weight:700;color:${col};margin-left:6px;vertical-align:middle;letter-spacing:.04em">${m.level}</span>
+      </button>`;
+  }).join('\n      ');
+
   $('module-content').innerHTML = `
   <div class="about-hero animate-in">
     <span class="about-eyebrow">${a.eyebrow}</span>
@@ -3481,19 +3544,11 @@ function renderAbout() {
 
   <div class="about-body animate-in">
     ${paragraphsHTML}
+    ${startHereHTML}
 
     <div class="about-explore">
       <div class="about-explore-label">${a.exploreLabel}</div>
-      <button class="about-chip" onclick="showModule('dp')">Differential Privacy</button>
-      <button class="about-chip" onclick="showModule('pprl')">Privacy-Preserving Record Linkage</button>
-      <button class="about-chip" onclick="showModule('mpc')">Secure Multi-Party Computation</button>
-      <button class="about-chip" onclick="showModule('fl')">Federated Learning</button>
-      <button class="about-chip" onclick="showModule('synth')">Synthetic Data</button>
-      <button class="about-chip" onclick="showModule('tee')">Trusted Execution Environments</button>
-      <button class="about-chip" onclick="showModule('he')">Homomorphic Encryption</button>
-      <button class="about-chip" onclick="showModule('tok')">Tokenization</button>
-      <button class="about-chip" onclick="showModule('zkp')">Zero-Knowledge Proofs (ZKP)</button>
-      <button class="about-chip" onclick="showModule('trad')">Traditional De-identification</button>
+      ${chipsHTML}
       <button class="about-chip" onclick="showModule('compare')">⊞ Compare All</button>
     </div>
   </div>
@@ -3514,3 +3569,26 @@ const modules = {
    =============================================================================*/
 showModule('about');
 
+
+/* =============================================================================
+   Sidebar toggle — collapses / expands the left navigation sidebar.
+   State is persisted in localStorage so the preference survives page reloads.
+   ============================================================================= */
+function toggleNav() {
+  const nav = document.getElementById('main-nav');
+  const btn = document.getElementById('nav-toggle');
+  const collapsed = nav.classList.toggle('nav-collapsed');
+  btn.textContent  = collapsed ? '▶' : '◀';
+  btn.title        = collapsed ? 'Expand navigation' : 'Collapse navigation';
+  btn.setAttribute('aria-label', collapsed ? 'Expand navigation sidebar' : 'Collapse navigation sidebar');
+  localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
+}
+
+// Restore sidebar collapse state from previous session
+(function () {
+  if (localStorage.getItem('nav-collapsed') === '1') {
+    document.getElementById('main-nav').classList.add('nav-collapsed');
+    const btn = document.getElementById('nav-toggle');
+    if (btn) { btn.textContent = '▶'; btn.title = 'Expand navigation'; }
+  }
+})();
