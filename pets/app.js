@@ -293,6 +293,15 @@ const TRADEOFF_TIP_KEYS = {
   'Output type':               'output-type',
 };
 
+function poorFitBlock(items) {
+  if (!items || !items.length) return '';
+  const bullets = items.map(i => `<li style="margin-bottom:3px">${i}</li>`).join('');
+  return `<div style="margin-top:10px;padding:10px 14px;background:rgba(255,61,90,0.05);border-left:3px solid var(--coral);border-radius:0 6px 6px 0;font-size:0.8rem;color:var(--text-dim);line-height:1.6">
+    <strong style="color:var(--coral);font-size:0.7rem;letter-spacing:.05em;text-transform:uppercase">⚠ Not a good fit when</strong>
+    <ul style="margin:6px 0 0;padding-left:1.2em">${bullets}</ul>
+  </div>`;
+}
+
 function tradeoffs(items) {
   return `<div class="tradeoffs">${items.map(([label, val, cls]) => {
     const key = TRADEOFF_TIP_KEYS[label];
@@ -465,6 +474,7 @@ function renderDP() {
     <div class="module-tag badge badge-green">${c.tag}</div>
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
 
   <!-- Tab switcher: styled like the Traditional De-id sub-technique tabs -->
@@ -1014,6 +1024,7 @@ function renderPPRL() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
     <button class="btn btn-mint" id="pprl-btn" onclick="pprlLink()">▶ Link Records</button>
@@ -1208,6 +1219,7 @@ function renderMPC() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-title">Scenario: Compute district average proficiency score</div>
@@ -1400,6 +1412,7 @@ function renderFL() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-title">Federated Training Round Simulation</div>
@@ -1558,6 +1571,7 @@ function renderSynth() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
 
   <div class="panel animate-in" style="animation-delay:.1s">
@@ -1800,6 +1814,7 @@ function renderTEE() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-title">Secure Enclave Data Flow</div>
@@ -1933,6 +1948,7 @@ function renderHE() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div style="display:grid;grid-template-columns:1fr 80px 1fr 80px 1fr;gap:0;align-items:stretch;margin-bottom:16px" class="panel">
     <div>
@@ -2080,6 +2096,7 @@ function renderTok() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div class="two-col" style="margin-bottom:16px">
     <div class="panel">
@@ -2221,6 +2238,7 @@ function renderTrad() {
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn btn-outline active-trad" id="ttab-suppression" onclick="tradNav('suppression')">Cell Suppression</button>
@@ -3078,6 +3096,7 @@ function renderZKP() {
     <div class="module-tag badge" style="background:rgba(176,111,255,0.1);color:var(--purple);border:1px solid rgba(176,111,255,0.4)">${c.tag}</div>
     <div class="module-title">${c.title}</div>
     <div class="module-def">${c.definition}</div>
+    ${poorFitBlock(c.poorFit)}
   </div>
 
   <div class="panel" style="border-color:var(--purple);margin-bottom:20px">

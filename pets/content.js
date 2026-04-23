@@ -301,6 +301,12 @@ const CONTENT = {
     // Shared intro shown above the Global / Local tabs
     definition: 'Differential privacy adds carefully calibrated <em>random noise</em> to query results so that no single person\'s data can be inferred — while still allowing accurate analysis of the group. The <em>privacy budget</em> (ε, "epsilon") controls this tradeoff: a small ε means more noise and stronger privacy; a large ε means less noise and higher accuracy but weaker privacy. There are two main variants — <strong>Global DP</strong> and <strong>Local DP</strong> — that differ in <em>where</em> the noise is added and how much trust is required.',
 
+    poorFit: [
+      'you need to release individual-level records — DP only protects aggregate query outputs, not the underlying rows',
+      'your target subgroups are very small (fewer than ~30 records), where noise will likely overwhelm the signal and produce unreliable estimates',
+      'exact counts are legally required — e.g., mandatory federal reporting with statutory precision requirements that leave no room for noise-induced rounding',
+    ],
+
     notes: '<strong>Global DP — implementation simplifications to be aware of:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Sensitivity is fixed at 1.</strong> The Laplace noise scale is <em>b = Δf / ε</em>, where Δf is the global sensitivity of the query. This simulation assumes Δf = 1 (a single-person count query). In practice, sensitivity must be calculated for each query type — an incorrect value directly undermines the privacy guarantee without any visible warning.</li><li><strong>Zero-clipping introduces upward bias for small groups.</strong> Noisy counts below zero are truncated to 0. This post-processing step is not itself a privacy violation, but it biases reported counts upward for small subgroups — a known pitfall that disproportionately affects small demographic cells and can distort equity analyses.</li><li><strong>Each query run spends ε — and this simulation tracks it.</strong> Under sequential composition, running the same query k times costs k × ε total privacy budget. The budget meter above the Run Query button shows accumulated spend against a configurable cap (default 5.0 ε). Once the cap is reached the button locks and further queries are refused until you click ↺ Reset. You can raise or lower the cap using the budget input to explore the tradeoff between how many queries an analyst can run and how much total privacy leakage is permitted. What this simulation does not model: real deployments track budget across sessions and across multiple analysts querying the same dataset — a single analyst resetting their own meter does not reset the institutional budget. Production systems use a privacy accountant (e.g. the OpenDP or Google DP libraries) to enforce a shared ceiling that survives restarts.</li><li><strong>The simulation starts with no budget spent.</strong> On first load both the blue "true" bars and the mint "noisy" bars are drawn at the same height — because the noisy values are initialised to the true counts before any query is run. The two bar series only visibly diverge after you click Run Query and Laplace noise is sampled. This makes the link between budget expenditure and data distortion explicit from the first interaction.</li><li><strong>Parallel composition: disjoint subsets cost only ε once.</strong> When queries operate on non-overlapping subgroups (e.g., separately querying Grade 3, Grade 4, and Grade 5 counts where each student appears in exactly one group), the total privacy cost is just ε — not k × ε. This is the parallel composition theorem. It is why publishing a full grade-level breakdown is cheaper than running the same query repeatedly on the whole dataset. Production DP systems track composition type and credit the analyst accordingly.</li><li><strong>Pure ε-DP vs. approximate (ε, δ)-DP — when practitioners use each.</strong> This simulation demonstrates <em>pure</em> ε-DP with the Laplace mechanism, which provides the strongest guarantee: every output event is bounded in probability by e<sup>ε</sup> relative to neighboring datasets. In practice, many deployed systems use <em>approximate</em> (ε, δ)-DP with the Gaussian mechanism instead. The δ parameter allows a small, explicitly bounded probability (e.g. δ = 10<sup>−8</sup>) that the strict ε bound is exceeded. This is acceptable when δ is much smaller than 1/n (one-in-a-million for a million-record dataset). The Gaussian mechanism typically requires less noise than Laplace for the same (ε, δ) guarantee, making it preferred for high-dimensional data and ML training (DP-SGD). When evaluating a DP system, always check whether the guarantee is pure ε or (ε, δ) — a system advertising a small ε may carry a non-negligible δ that weakens the stated guarantee.</li></ul>',
 
     resources: [
@@ -385,6 +391,12 @@ const CONTENT = {
     definition: 'PPRL lets two agencies find the same individuals across datasets by comparing <em>encoded identifiers</em> (such as cryptographic hash encodings) — without either party revealing the underlying names, dates of birth, or other PII to the other.',
     useCase:    'An SLDS links K–12 enrollment records to postsecondary enrollment and workforce data to track long-term outcomes, without a shared student ID and without exchanging personally identifiable information.',
 
+    poorFit: [
+      'source data quality is poor — inconsistent name formats, missing dates of birth, or high typo rates degrade match accuracy significantly',
+      'you need real-time matching at query time — PPRL is a batch process that requires pre-computing encoded representations',
+      'you need to link on more than 3–4 quasi-identifiers without specialist guidance on threshold tuning and error-rate validation',
+    ],
+
     tradeoffs: [
       ['Privacy strength',          'High',                   'val-low'],
       ['Data utility',              'High (linkage)',          'val-low'],
@@ -414,6 +426,12 @@ const CONTENT = {
     title:      'Secure Multi-Party Computation',
     definition: 'MPC allows multiple parties to jointly compute a result over their combined data — such as a district average or a merged statistic — without any party revealing their private input to the others.',
     useCase:    'Three school districts want to compute a regional graduation rate to benchmark against state targets, without sharing their individual student outcome data.',
+
+    poorFit: [
+      'parties have very different network or compute capacity — MPC requires synchronized multi-round communication between all participants',
+      'you need results in real time or near-real time — latency is high even on fast networks due to cryptographic communication rounds',
+      'the computation is complex (e.g., joins, non-linear statistics) — MPC cost scales sharply with circuit complexity beyond simple aggregates',
+    ],
 
     revealToggleLabel: 'Show true values (instructional use only — these scores are not disclosed to any party during the protocol)',
 
@@ -452,6 +470,12 @@ const CONTENT = {
     title:      'Federated Learning',
     definition: 'Federated learning trains a shared machine learning model across multiple institutions, each keeping their data local. Only model <em>updates</em> (gradients) — not raw records — are shared with a central coordinator.',
     useCase:    'Multiple states train an early-warning indicator model for student dropout risk. Each state\'s student data never leaves its servers; only statistical model updates are pooled to improve prediction for all.',
+
+    poorFit: [
+      'data is highly skewed across nodes — if one institution holds the majority of records, the global model will reflect that institution\'s distribution regardless of federation',
+      'you have fewer than ~5 participating institutions — small federation sizes weaken both model quality and the informal privacy protection from aggregation',
+      'the task is not a machine learning problem — FL trains predictive models and is not a general-purpose analytics or statistics tool',
+    ],
 
     // Labels for the four institution nodes in the network diagram.
     // Use \n for line breaks within a node label.
@@ -497,6 +521,12 @@ const CONTENT = {
     title:      'Synthetic Data Generation',
     definition: 'Synthetic data is artificially generated to match the <em>statistical properties</em> of a real dataset — distributions, correlations, and patterns — while containing no records from real individuals, substantially reducing re-identification risk.',
     useCase:    'A state education agency releases a synthetic version of its longitudinal student dataset so researchers can build and test analytic tools without accessing any real student records.',
+
+    poorFit: [
+      'analysis focuses on rare subgroups (students with specific disabilities, small LEAs) — generators trained on sparse data produce unreliable synthetic records for those groups',
+      'legal or contractual frameworks require working with actual records (e.g., some audit, verification, or compliance contexts)',
+      'a formal, provable privacy guarantee is required — only DP-trained synthetic data provides one, and it degrades fidelity for small subgroups',
+    ],
 
     tradeoffs: [
       ['Privacy strength',          'High (model-dependent)',           'val-med'],
@@ -567,6 +597,12 @@ const CONTENT = {
     definition: 'A TEE (or "secure enclave") is a hardware-isolated computing zone where data is <em>encrypted even from the cloud provider or system administrator</em>. Code runs in the enclave, data enters encrypted, and only approved results leave.',
     useCase:    'A secure research platform (like SafeInsights) lets approved researchers run statistical analyses on sensitive student records stored in an enclave — without anyone, including the platform operator, being able to view the raw data.',
 
+    poorFit: [
+      'the hardware vendor itself is in the threat model — TEE security ultimately relies on trusting the CPU manufacturer and attestation supply chain',
+      'your threat model includes sophisticated hardware-level attackers — known side-channel attacks (Spectre, SGX vulnerabilities) have broken enclave isolation in research settings',
+      'your team lacks enclave development experience — implementation errors such as incorrect memory isolation or insecure OCALL boundaries directly undermine the security guarantee',
+    ],
+
     // Text for the amber callout box shown below the diagram
     keyProperty: 'Even the cloud provider hosting the server cannot read the data inside the enclave. The hardware enforces isolation through cryptographic attestation.',
 
@@ -600,6 +636,12 @@ const CONTENT = {
     definition: 'Homomorphic encryption (HE) allows a server to perform computations — additions, multiplications, and averages (and, with significant overhead, comparisons) — directly on <em>encrypted data</em>, returning an encrypted result. The server never sees the plaintext values at any point.',
     useCase:    'An SEA outsources analytics to a cloud vendor. Student records are encrypted before upload; the vendor computes aggregate statistics on ciphertext and returns encrypted results that only the SEA can decrypt — the vendor learns nothing about individual students.',
 
+    poorFit: [
+      'queries need to complete in seconds or minutes — HE is 1,000–1,000,000× slower than plaintext computation and is not suitable for interactive or real-time use',
+      'your workload requires comparisons, sorting, or non-linear operations — these require significantly more expensive circuit constructions beyond basic additions and multiplications',
+      'you need a production-grade deployment today — tooling, standardized parameters, and accessible libraries are still maturing rapidly',
+    ],
+
     // Text for the coral warning callout about FHE performance limitations
     practicalNote: 'Fully homomorphic encryption (FHE) is computationally expensive — 1,000–1,000,000× slower than plaintext computation. Partially homomorphic schemes (PHE, supporting only addition or only multiplication) are more practical today. Active area of standardization work.',
 
@@ -632,6 +674,12 @@ const CONTENT = {
     title:      'Tokenization',
     definition: 'Tokenization replaces sensitive identifiers — names, SSNs, student IDs — with opaque, consistent <em>pseudorandom tokens</em> stored in a secure vault. The same identifier always maps to the same token, enabling cross-system linkage without exposing the underlying PII. Only an authorized vault lookup can reverse a token.',
     useCase:    'A state replaces student SSNs and names with tokens before sharing data with postsecondary and workforce partners. Each partner works with tokens; only the state vault can re-link tokens to real identities for authorized purposes.',
+
+    poorFit: [
+      'the goal is privacy protection against a determined adversary — tokenization is an operational control, not a formal privacy technique; vault access directly re-identifies all tokenized records',
+      'the downstream use is statistical analysis — tokens preserve linkage across systems but do not preserve analytical patterns; aggregate queries still require real data or a separate privacy technique',
+      'vault infrastructure and access-control governance cannot be reliably maintained — a poorly governed vault eliminates the protection entirely',
+    ],
 
     // Text for the blue informational callout comparing tokenization vs. encryption
     comparisonNote: 'Encrypted data can be decrypted by anyone with the key. Tokenization separates the mapping into a vault with its own access controls — a breach of tokenized data is far less valuable without vault access. Tokens are also format-preserving (e.g., a token can look like an ID), enabling drop-in replacement.',
@@ -667,6 +715,12 @@ const CONTENT = {
     title:      'Traditional De-identification Methods',
     definition: 'Before modern PETs, agencies relied on a set of classical statistical disclosure limitation (SDL) techniques to reduce re-identification risk in released data. These methods are widely understood, operationally simple, and still foundational — but they provide <em>no formal mathematical privacy guarantees</em> and are increasingly vulnerable to modern re-identification attacks.',
     useCase:    'FERPA\'s de-identification provisions and NCES statistical standards rely heavily on these techniques for releasing public-use microdata files and aggregate statistics from SLDS and survey datasets.',
+
+    poorFit: [
+      'the dataset contains rare records or small demographic cells — suppression and generalization provide weak protection for sparse data and can be defeated by subtraction or background knowledge attacks',
+      'your adversary has access to external data sources they can combine with the released dataset — quasi-identifier combinations can re-identify individuals even when direct identifiers are removed',
+      'a formal, auditable privacy guarantee is required — traditional de-id provides no mathematical bound on re-identification risk and cannot be formally certified',
+    ],
 
     // Each sub-technique is rendered as its own card.
     // Add new entries here to add new cards; edit or remove to update existing ones.
@@ -908,6 +962,12 @@ const CONTENT = {
     tag:        'Emerging Technique',
     title:      'Zero-Knowledge Proofs (ZKP)',
     definition: 'A ZKP lets one party (the Prover) convince another (the Verifier) that a statement is true — without revealing any information beyond the fact of its truth. Because no underlying data is transmitted, ZKP minimizes the risk of a FERPA disclosure — though practitioners should consult legal counsel on whether the proof itself constitutes a record disclosure.',
+
+    poorFit: [
+      'you need aggregate statistics, counts, or averages — ZKP is optimized for binary or threshold claims ("meets threshold / does not") and cannot natively produce summaries',
+      'proof generation latency is a constraint — generating proofs is computationally intensive and not suited for high-volume or real-time verification workflows',
+      'your team has no cryptographic engineering experience — circuit bugs can silently allow invalid proofs to verify, with no visible error',
+    ],
 
     tabs: ['① The Analogy', '② Single-Shot Proof', '③ Education Demo', '④ FERPA Workflow', '⑤ Tradeoffs'],
 
