@@ -249,7 +249,7 @@ const MODULE_FNS = [
   'zkpGoTo','zkpRunChallenge','zkpRunMany','zkpResetChallenges',
   'zkpGenerateNIZKP','zkpResetNIZKP',
   'zkpSelectScenario','zkpResetProof','zkpNextStep',
-  'assStart','assSelectRole','assSelectOption','assNextPage','assPrevPage','assRestart','assDownload',
+  'assStart','assStartRoleOnly','assSelectRole','assSelectOption','assNextPage','assPrevPage','assRestart','assDownload',
 ];
 
 /**
@@ -4020,33 +4020,45 @@ function renderAbout() {
 
   // ── Assessment wizard state ──────────────────────────────────────────────
   const quiz = a.assessment.quizModules;
-  let assPhase   = 'entry';   // 'entry' | 'role' | 'quiz' | 'results'
-  let assRole    = null;       // selected role key
-  let assPage    = 0;          // current module index (0 – quiz.length-1)
-  let assAnswers = {};         // { 'dp-0': 1, 'dp-1': 3, ... }
+  let assPhase    = 'entry';  // 'entry' | 'role' | 'quiz' | 'results'
+  let assRole     = null;     // selected role key
+  let assPage     = 0;        // current module index (0 – quiz.length-1)
+  let assAnswers  = {};       // { 'dp-0': 1, 'dp-1': 3, ... }
+  let assRoleOnly = false;    // true when user chose "just my role" (skip quiz)
 
   function assCalcScores() {
-    const scores = {};
+    const scores = {}, notSure = {};
     for (const mod of quiz) {
-      let s = 0;
+      let s = 0, ns = 0;
+      const nsIdx = mod.questions[0].options.length - 1; // "Not sure" is always last
       mod.questions.forEach((q, qi) => {
-        if (assAnswers[`${mod.key}-${qi}`] === q.correct) s++;
+        const ans = assAnswers[`${mod.key}-${qi}`];
+        if (ans === q.correct)   s++;
+        else if (ans === nsIdx)  ns++;
       });
-      scores[mod.key] = s;
+      scores[mod.key]  = s;
+      notSure[mod.key] = ns;
     }
-    return scores;
+    return { scores, notSure };
   }
 
-  function assLevelInfo(score) {
-    if (score === 2) return { icon: '✓', color: 'var(--mint)',  label: 'Solid foundation', action: 'Dive into 📝 Notes and 📚 Resources for advanced depth.' };
-    if (score === 1) return { icon: '◐', color: 'var(--amber)', label: 'Building',          action: 'Re-visit the simulation and read the complete 📝 Notes section.' };
+  // notSureCount: how many of this module's 2 questions the user answered "Not sure"
+  function assLevelInfo(score, notSureCount) {
+    if (score === 2) return { icon: '✓', color: 'var(--mint)',  label: 'Solid foundation',   action: 'Dive into 📝 Notes and 📚 Resources for advanced depth.' };
+    if (score === 1) return { icon: '◐', color: 'var(--amber)', label: 'Building',            action: 'Re-visit the simulation and read the complete 📝 Notes section.' };
+    if (notSureCount === 2)
+                     return { icon: '?', color: 'var(--text-dim)', label: 'Not yet covered', action: 'Start from scratch: watch the simulation, then read all 📝 Notes and 📚 Resources.' };
     return             { icon: '○', color: 'var(--coral)',  label: 'Review recommended', action: 'Work through the full simulation, read all 📝 Notes, and explore 📚 Resources.' };
   }
 
-  function assBuildPath(role, scores) {
+  function assBuildPath(role, scores, notSure, roleOnly) {
     const priorities = ASSESS_ROLE_PRIORITIES[role] || ASSESS_ROLE_PRIORITIES.other;
+    // In role-only mode every module is unscored — present in pure role-priority order.
+    if (roleOnly) {
+      return priorities.map((key, idx) => ({ key, score: -1, ns: 0, roleRank: idx }));
+    }
     return priorities
-      .map((key, idx) => ({ key, score: scores[key] ?? 0, roleRank: idx }))
+      .map((key, idx) => ({ key, score: scores[key] ?? 0, ns: notSure[key] ?? 0, roleRank: idx }))
       .sort((a, b) => a.score !== b.score ? a.score - b.score : a.roleRank - b.roleRank);
   }
 
@@ -4061,15 +4073,47 @@ function renderAbout() {
         <div style="margin:20px 0 24px;padding:14px 18px;
                     border:1px solid var(--border2);border-radius:8px;
                     background:rgba(77,159,255,0.04)">
-          <div style="display:flex;align-items:center;justify-content:space-between;
-                      flex-wrap:wrap;gap:8px;margin-bottom:8px">
-            <div style="font-size:.75rem;font-weight:700;color:var(--blue);
-                        letter-spacing:.05em">${ass.heading.toUpperCase()}</div>
-          </div>
+          <div style="font-size:.75rem;font-weight:700;color:var(--blue);
+                      letter-spacing:.05em;margin-bottom:6px">${ass.heading.toUpperCase()}</div>
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;
-                      margin-bottom:12px">${ass.intro}</div>
-          <button class="btn btn-outline" onclick="assStart()"
-            style="font-size:0.78rem">${ass.cta}</button>
+                      margin-bottom:14px">${ass.intro}</div>
+          <!-- Three entry paths -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+                      gap:10px">
+            <!-- Option A: full quiz -->
+            <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;
+                        background:var(--panel)">
+              <div style="font-family:var(--font-mono);font-size:.7rem;font-weight:700;
+                          color:var(--blue);letter-spacing:.05em;margin-bottom:4px">
+                OPTION A · ~5 min
+              </div>
+              <div style="font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:4px">
+                Knowledge check + role
+              </div>
+              <div style="font-size:.72rem;color:var(--text-dim);line-height:1.45;margin-bottom:10px">
+                Answer 2 questions per module. Get a path ranked by your knowledge gaps <em>and</em> your role.
+              </div>
+              <button class="btn btn-outline" onclick="assStart()"
+                style="font-size:.75rem;width:100%">${ass.cta}</button>
+            </div>
+            <!-- Option B: role only -->
+            <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;
+                        background:var(--panel)">
+              <div style="font-family:var(--font-mono);font-size:.7rem;font-weight:700;
+                          color:var(--amber);letter-spacing:.05em;margin-bottom:4px">
+                OPTION B · ~30 sec
+              </div>
+              <div style="font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:4px">
+                Just my role
+              </div>
+              <div style="font-size:.72rem;color:var(--text-dim);line-height:1.45;margin-bottom:10px">
+                Skip the quiz. Select your role and get a path ranked by what matters most for your work.
+              </div>
+              <button class="btn btn-outline" onclick="assStartRoleOnly()"
+                style="font-size:.75rem;width:100%;border-color:rgba(255,201,64,0.4);
+                       color:var(--amber)">Select my role →</button>
+            </div>
+          </div>
         </div>`;
       return;
     }
@@ -4095,9 +4139,13 @@ function renderAbout() {
           <div style="font-size:.75rem;font-weight:700;color:var(--blue);
                       letter-spacing:.05em;margin-bottom:4px">${ass.heading.toUpperCase()}</div>
           <div style="font-size:.82rem;font-weight:700;color:var(--text-bright);
-                      margin-bottom:4px">Step 1 of 2 — Select your role</div>
+                      margin-bottom:4px">
+            ${assRoleOnly ? 'Select your role' : 'Step 1 of 2 — Select your role'}
+          </div>
           <div style="font-size:.76rem;color:var(--text-dim);margin-bottom:14px">
-            Your role shapes which modules are prioritized in your learning path.
+            ${assRoleOnly
+              ? 'Your path will be ranked by what matters most for your work — no quiz required.'
+              : 'Your role shapes how modules are ordered. You\'ll take the knowledge check next.'}
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
                       gap:10px;margin-bottom:10px">${cards}</div>
@@ -4117,24 +4165,30 @@ function renderAbout() {
       const canAdvance = true; // allow skipping (unanswered = 0 score)
 
       const qBlocks = mod.questions.map((q, qi) => {
-        const selIdx = assAnswers[`${mod.key}-${qi}`];
+        const selIdx    = assAnswers[`${mod.key}-${qi}`];
+        const notSureOi = q.options.length - 1; // "Not sure" is always the last option
         const opts = q.options.map((opt, oi) => {
-          const sel = selIdx === oi;
+          const sel      = selIdx === oi;
+          const isNS     = oi === notSureOi;   // this is the "Not sure" option
+          // "Not sure" selected → dim amber; regular selected → blue; unselected → default
+          const borderC  = sel ? (isNS ? 'rgba(255,201,64,0.5)' : 'var(--blue)') : 'var(--border)';
+          const bgC      = sel ? (isNS ? 'rgba(255,201,64,0.07)' : 'rgba(77,159,255,0.10)') : (isNS ? 'transparent' : 'var(--panel)');
+          const textC    = sel ? (isNS ? 'var(--amber)' : 'var(--text-bright)') : (isNS ? 'var(--text-dim)' : 'var(--text)');
+          const labelC   = sel ? (isNS ? 'var(--amber)' : 'var(--blue)') : 'var(--text-dim)';
           return `<div onclick="assSelectOption('${mod.key}',${qi},${oi})"
             style="cursor:pointer;padding:9px 12px;margin-bottom:6px;border-radius:6px;
-                   border:1px solid ${sel ? 'var(--blue)' : 'var(--border)'};
-                   background:${sel ? 'rgba(77,159,255,0.10)' : 'var(--panel)'};
-                   font-size:0.78rem;color:${sel ? 'var(--text-bright)' : 'var(--text)'};
+                   border:1px solid ${borderC};background:${bgC};
+                   font-size:0.78rem;color:${textC};
+                   ${isNS ? 'font-style:italic;border-style:dashed;' : ''}
                    transition:border-color 0.12s,background 0.12s;
                    display:flex;align-items:flex-start;gap:10px"
-            onmouseover="if(!${sel}){this.style.borderColor='var(--border2)';this.style.background='var(--panel2)'}"
-            onmouseout="if(!${sel}){this.style.borderColor='var(--border)';this.style.background='var(--panel)'}">
+            onmouseover="if(!${sel}){this.style.borderColor='${isNS ? 'rgba(255,201,64,0.35)' : 'var(--border2)'}';this.style.background='${isNS ? 'rgba(255,201,64,0.04)' : 'var(--panel2)'}'}"
+            onmouseout="if(!${sel}){this.style.borderColor='var(--border)';this.style.background='${isNS ? 'transparent' : 'var(--panel)'}'}">
               <span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:700;
-                           min-width:18px;padding-top:1px;
-                           color:${sel ? 'var(--blue)' : 'var(--text-dim)'}">
+                           min-width:18px;padding-top:1px;color:${labelC}">
                 ${String.fromCharCode(65 + oi)}
               </span>
-              <span>${opt}</span>
+              <span>${opt}${isNS ? '' : ''}</span>
             </div>`;
         }).join('');
         return `
@@ -4144,7 +4198,9 @@ function renderAbout() {
               Q${qi+1}. ${q.q}
             </div>
             ${opts}
-            ${selIdx === undefined ? '<div style="font-size:.7rem;color:var(--text-dim);font-style:italic;margin-top:2px">Click an option — or skip to score 0 for this question.</div>' : ''}
+            ${selIdx === undefined
+              ? '<div style="font-size:.7rem;color:var(--text-dim);font-style:italic;margin-top:2px">Select an answer — or choose "Not sure" if this is new territory.</div>'
+              : (selIdx === notSureOi ? '<div style="font-size:.7rem;color:var(--amber);margin-top:2px">Scored 0 — we\'ll prioritize this module in your learning path.</div>' : '')}
           </div>`;
       }).join('');
 
@@ -4183,15 +4239,16 @@ function renderAbout() {
 
     // ── RESULTS ──────────────────────────────────────────────────────────────
     if (assPhase === 'results') {
-      const scores   = assCalcScores();
+      const { scores, notSure } = assCalcScores();
       const roleObj  = ass.roles.find(r => r.key === assRole) || ass.roles[4];
-      const path     = assBuildPath(assRole, scores);
+      const path     = assBuildPath(assRole, scores, notSure, assRoleOnly);
       const roleNotes= ASSESS_ROLE_NOTES[assRole] || ASSESS_ROLE_NOTES.other;
 
       // Score summary table
       const summaryRows = quiz.map(mod => {
-        const s = scores[mod.key] ?? 0;
-        const lv = assLevelInfo(s);
+        const s  = scores[mod.key]  ?? 0;
+        const ns = notSure[mod.key] ?? 0;
+        const lv = assLevelInfo(s, ns);
         return `<tr>
           <td style="padding:5px 10px;font-size:.78rem;color:var(--text)">${mod.label}</td>
           <td style="padding:5px 10px;font-family:var(--font-mono);font-size:.75rem;
@@ -4202,13 +4259,17 @@ function renderAbout() {
         </tr>`;
       }).join('');
 
-      // Tier buckets
+      // Tier buckets — role-only mode uses score -1 (no quiz taken)
       const tier0 = path.filter(m => m.score === 0);
       const tier1 = path.filter(m => m.score === 1);
       const tier2 = path.filter(m => m.score === 2);
+      const tierR = path.filter(m => m.score === -1); // role-only: no score
+
+      // assLevelInfo for role-only cards
+      const lvRoleOnly = { icon: '→', color: 'var(--blue)', label: 'Role priority', action: 'Start with the simulation, then review 📝 Notes and 📚 Resources.' };
 
       function pathCard(m, rank) {
-        const lv   = assLevelInfo(m.score);
+        const lv   = m.score === -1 ? lvRoleOnly : assLevelInfo(m.score, m.ns);
         const note = roleNotes[m.key] || '';
         return `
           <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;
@@ -4263,7 +4324,8 @@ function renderAbout() {
             </div>
           </div>
 
-          <!-- Knowledge summary -->
+          ${assRoleOnly ? '' : `
+          <!-- Knowledge summary (quiz path only) -->
           <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;
                       margin-bottom:4px">
             <div style="padding:8px 10px;background:var(--panel);
@@ -4285,19 +4347,22 @@ function renderAbout() {
               </thead>
               <tbody>${summaryRows}</tbody>
             </table>
-          </div>
+          </div>`}
 
           <!-- Learning path -->
           <div style="margin-top:16px">
             <div style="font-size:.82rem;font-weight:700;color:var(--text-bright);
                         margin-bottom:4px">Your recommended learning path</div>
-            <div style="font-size:.74rem;color:var(--text-dim);margin-bottom:10px;
-                        line-height:1.5">
-              Sorted by knowledge gaps first, then by relevance to your role. Click any module name to open it.
+            <div style="font-size:.74rem;color:var(--text-dim);margin-bottom:10px;line-height:1.5">
+              ${assRoleOnly
+                ? 'Ranked by relevance to your role. Click any module name to open it.'
+                : 'Sorted by knowledge gaps first, then by relevance to your role. Click any module name to open it.'}
             </div>
-            ${tierBlock(tier0, '① Fill knowledge gaps — score 0/2', 'var(--coral)')}
-            ${tierBlock(tier1, '② Build on partial knowledge — score 1/2', 'var(--amber)')}
-            ${tierBlock(tier2, '③ Advanced depth — score 2/2', 'var(--mint)')}
+            ${assRoleOnly
+              ? tierBlock(tierR, 'Modules ranked by role relevance', 'var(--blue)')
+              : `${tierBlock(tier0, '① Fill knowledge gaps — score 0/2', 'var(--coral)')}
+                 ${tierBlock(tier1, '② Build on partial knowledge — score 1/2', 'var(--amber)')}
+                 ${tierBlock(tier2, '③ Advanced depth — score 2/2', 'var(--mint)')}`}
           </div>
         </div>`;
 
@@ -4307,12 +4372,16 @@ function renderAbout() {
   } // end assRender
 
   // ── Assessment window handlers ───────────────────────────────────────────
-  window.assStart        = () => { assPhase = 'role'; assRender(); };
+  window.assStart        = () => { assRoleOnly = false; assPhase = 'role'; assRender(); };
+  window.assStartRoleOnly= () => { assRoleOnly = true;  assPhase = 'role'; assRender(); };
   window.assSelectRole   = (key) => {
     assRole = key;
-    // Re-render role page to show selection highlight, then advance after short delay
-    assRender();
-    setTimeout(() => { assPhase = 'quiz'; assPage = 0; assRender(); }, 220);
+    assRender(); // show selection highlight first
+    setTimeout(() => {
+      assPhase = assRoleOnly ? 'results' : 'quiz';
+      assPage  = 0;
+      assRender();
+    }, 220);
   };
   window.assSelectOption = (modKey, qi, oi) => {
     assAnswers[`${modKey}-${qi}`] = oi;
@@ -4332,15 +4401,15 @@ function renderAbout() {
     if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   };
   window.assRestart = () => {
-    assPhase = 'entry'; assRole = null; assPage = 0; assAnswers = {};
+    assPhase = 'entry'; assRole = null; assPage = 0; assAnswers = {}; assRoleOnly = false;
     assRender();
   };
 
   window.assDownload = () => {
     const ass     = a.assessment;
-    const scores  = assCalcScores();
+    const { scores, notSure } = assCalcScores();
     const roleObj = ass.roles.find(r => r.key === assRole) || ass.roles[4];
-    const path    = assBuildPath(assRole, scores);
+    const path    = assBuildPath(assRole, scores, notSure, assRoleOnly);
     const roleNotes = ASSESS_ROLE_NOTES[assRole] || ASSESS_ROLE_NOTES.other;
     const today   = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
@@ -4356,35 +4425,45 @@ function renderAbout() {
     txt += `${'='.repeat(64)}\n\n`;
     txt += `Role: ${roleObj.label}\n\n`;
 
-    txt += `${'='.repeat(64)}\n`;
-    txt += `KNOWLEDGE ASSESSMENT SUMMARY\n`;
-    txt += `${'='.repeat(64)}\n\n`;
-    txt += `${ pad('Module', 38) }  ${ pad('Score',6) }  Level\n`;
-    txt += `${line()}\n`;
-    for (const mod of quiz) {
-      const s  = scores[mod.key] ?? 0;
-      const lv = assLevelInfo(s);
-      txt += `${pad(mod.label, 38)}  ${pad(s+'/2', 6)}  ${lv.icon} ${lv.label}\n`;
+    if (!assRoleOnly) {
+      txt += `${'='.repeat(64)}\n`;
+      txt += `KNOWLEDGE ASSESSMENT SUMMARY\n`;
+      txt += `${'='.repeat(64)}\n\n`;
+      txt += `${ pad('Module', 38) }  ${ pad('Score',6) }  Level\n`;
+      txt += `${line()}\n`;
+      for (const mod of quiz) {
+        const s  = scores[mod.key]  ?? 0;
+        const ns = notSure[mod.key] ?? 0;
+        const lv = assLevelInfo(s, ns);
+        txt += `${pad(mod.label, 38)}  ${pad(s+'/2', 6)}  ${lv.icon} ${lv.label}\n`;
+      }
+      txt += `\n`;
+    } else {
+      txt += `Path type: Role-based (no knowledge check taken)\n\n`;
     }
-    txt += `\n`;
 
     txt += `${'='.repeat(64)}\n`;
     txt += `RECOMMENDED LEARNING PATH\n`;
     txt += `${'='.repeat(64)}\n\n`;
-    txt += `Sorted by knowledge gaps first, then by relevance to your role.\n\n`;
+    txt += assRoleOnly
+      ? `Ranked by relevance to your role.\n\n`
+      : `Sorted by knowledge gaps first, then by relevance to your role.\n\n`;
 
-    const tiers = [
-      { items: path.filter(m => m.score === 0), title: 'PRIORITY 1 — FILL KNOWLEDGE GAPS (0/2)' },
-      { items: path.filter(m => m.score === 1), title: 'PRIORITY 2 — BUILD ON PARTIAL KNOWLEDGE (1/2)' },
-      { items: path.filter(m => m.score === 2), title: 'PRIORITY 3 — ADVANCED DEPTH (2/2)' },
-    ];
+    const tiers = assRoleOnly
+      ? [{ items: path.filter(m => m.score === -1), title: 'MODULES RANKED BY ROLE RELEVANCE' }]
+      : [
+          { items: path.filter(m => m.score === 0), title: 'PRIORITY 1 — FILL KNOWLEDGE GAPS (0/2)' },
+          { items: path.filter(m => m.score === 1), title: 'PRIORITY 2 — BUILD ON PARTIAL KNOWLEDGE (1/2)' },
+          { items: path.filter(m => m.score === 2), title: 'PRIORITY 3 — ADVANCED DEPTH (2/2)' },
+        ];
     let rank = 0;
+    const lvRoleOnlyDL = { icon: '→', label: 'Role priority', action: 'Start with the simulation, then review Notes and Resources.' };
     for (const tier of tiers) {
       if (!tier.items.length) continue;
       txt += `${tier.title}\n${line()}\n\n`;
       for (const m of tier.items) {
         rank++;
-        const lv   = assLevelInfo(m.score);
+        const lv   = m.score === -1 ? lvRoleOnlyDL : assLevelInfo(m.score, m.ns);
         const note = roleNotes[m.key] || '';
         txt += `#${rank}. ${ASSESS_MOD_LABELS[m.key]}\n`;
         if (note) txt += `    Why it matters for your role:\n    ${note}\n`;
