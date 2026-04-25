@@ -239,9 +239,9 @@ const MODULE_FNS = [
   'mpcRun','mpcReset','mpcToggleReveal',
   'flRun',
   'synthToggle','dpPhase','dpUpdateEps',
-  'teeRun','teeReset',
-  'heRun','heReset',
-  'tokRun','tokDetok','tokReset',
+  'teeRun','teeReset','teeAttemptAccess',
+  'heRun','heReset','heSetQuery',
+  'tokRun','tokDetok','tokRetokenize','tokReset','tokNormTest','tokNormFix',
   'applySuppression','resetSuppression','applyMasking','resetMasking',
   'applyGen','resetGen','applyPert','resetPert','updateKAnon',
   'tradNav',
@@ -249,6 +249,7 @@ const MODULE_FNS = [
   'zkpGoTo','zkpRunChallenge','zkpRunMany','zkpResetChallenges',
   'zkpGenerateNIZKP','zkpResetNIZKP',
   'zkpSelectScenario','zkpResetProof','zkpNextStep',
+  'assStart','assSelectRole','assSelectOption','assNextPage','assPrevPage','assRestart','assDownload',
 ];
 
 /**
@@ -418,6 +419,43 @@ function notes(html) {
 }
 
 
+/* =============================================================================
+   7. relatedModules() — "See also" panel renderer
+   Pass the module's `related` array: [{key, label, note}, ...].
+   Each entry renders as a clickable chip that navigates to the named module.
+   Returns '' if the array is absent or empty (graceful no-op for modules
+   that have no defined cross-references).
+   ============================================================================= */
+function relatedModules(items) {
+  if (!items || !items.length) return '';
+  const chips = items.map(({key, label, note}) => `
+    <div style="display:flex;flex-direction:column;gap:5px;padding:12px 16px;
+                background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+                min-width:220px;flex:1;max-width:400px">
+      <button onclick="showModule('${key}')"
+        style="display:inline-flex;align-items:center;gap:5px;background:none;border:none;
+               cursor:pointer;font-family:var(--font-mono);font-size:0.8rem;font-weight:700;
+               color:var(--blue);text-align:left;padding:0;line-height:1.3"
+        onmouseover="this.style.color='var(--text-bright)'"
+        onmouseout="this.style.color='var(--blue)'"
+      >${label} <span style="font-size:0.7rem;opacity:0.7">→</span></button>
+      <div style="font-size:0.76rem;color:var(--text-dim);line-height:1.55">${note}</div>
+    </div>`).join('');
+  return `
+  <div style="margin-top:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+    <div style="padding:11px 20px;background:var(--panel);
+                font-family:var(--font-mono);font-size:0.72rem;font-weight:700;
+                color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;
+                border-bottom:1px solid var(--border)">
+      🔗 See also — Related techniques
+    </div>
+    <div style="padding:14px 20px;background:var(--panel);display:flex;flex-wrap:wrap;gap:12px">
+      ${chips}
+    </div>
+  </div>`;
+}
+
+
 // ── MODULE: Differential Privacy ─────────────────────────────────────────────
 // Two-tab module: Global DP (curator adds noise to aggregates) and
 // Local DP (individual adds noise on-device via randomized response).
@@ -490,8 +528,23 @@ function renderDP() {
     ${TIP('local-vs-global','What\'s the difference?')}
   </div>
 
+  <!-- Trust-model comparison: highlights whichever tab is active -->
+  <div id="dp-trust-compare" style="display:flex;margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:0.78rem;line-height:1.55">
+    <div id="dp-trust-global" style="flex:1;padding:11px 16px;border-right:1px solid var(--border);background:rgba(77,159,255,0.10);transition:background 0.2s">
+      <div style="font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:0.68rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">🏛 Global DP</div>
+      <div style="color:var(--text)"><strong>Noise added by the institution</strong> after collecting true data.</div>
+      <div style="color:var(--text-dim);margin-top:3px">Individuals must trust the data collector.</div>
+    </div>
+    <div id="dp-trust-local" style="flex:1;padding:11px 16px;background:var(--panel);transition:background 0.2s">
+      <div style="font-family:var(--font-mono);font-weight:700;color:var(--mint);font-size:0.68rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">📱 Local DP</div>
+      <div style="color:var(--text)"><strong>Noise added on each device</strong> before data leaves.</div>
+      <div style="color:var(--text-dim);margin-top:3px">No trust in the collector required.</div>
+    </div>
+  </div>
+
   <!-- Tab content injected here by dpShowTab() -->
   <div id="dp-tab-content"></div>
+  ${relatedModules(c.related)}
 `;
 
   // ── Tab switcher ────────────────────────────────────────────────────────────
@@ -500,6 +553,12 @@ function renderDP() {
     activeTab = tab;
     document.querySelectorAll('.dp-tab-btn').forEach(b => b.classList.remove('active-dp'));
     $(`dp-tab-${tab}`).classList.add('active-dp');
+    const gPanel = $('dp-trust-global');
+    const lPanel = $('dp-trust-local');
+    if (gPanel && lPanel) {
+      gPanel.style.background = tab === 'global' ? 'rgba(77,159,255,0.10)' : 'var(--panel)';
+      lPanel.style.background = tab === 'local'  ? 'rgba(0,229,160,0.08)'  : 'var(--panel)';
+    }
     if (tab === 'global') renderGlobalTab();
     else                  renderLocalTab();
   };
@@ -1061,7 +1120,8 @@ function renderPPRL() {
   </div>
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   // renderRecords — builds the record rows for one agency panel.
   // Name and DOB spans have individual IDs so pprlToggleAdversary() can hide
@@ -1223,18 +1283,21 @@ function renderMPC() {
   </div>
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-title">Scenario: Compute district average proficiency score</div>
+    <!-- Instructor mode toggle — sits above school cards so it's seen before running the protocol -->
+    <div style="margin-bottom:14px;padding:9px 14px;background:rgba(255,201,64,0.06);border:1px solid rgba(255,201,64,0.25);border-radius:8px">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.75rem;color:var(--text-dim);cursor:pointer;user-select:none">
+        <input type="checkbox" id="mpc-reveal-toggle" onchange="mpcToggleReveal()" style="cursor:pointer;accent-color:var(--amber);width:14px;height:14px">
+        <span><strong style="color:var(--amber)">Instructor mode:</strong> ${c.revealToggleLabel}</span>
+      </label>
+    </div>
     <div class="mpc-schools" id="mpc-schools">
     ${schools.map((s, i) => `
       <div class="school-card" id="mpc-school-${i}">
         <div class="school-name">${s.name}</div>
         <div class="school-score hidden-score" id="mpc-score-${i}" style="color:${s.color}"></div>
-        <div style="font-size:0.65rem;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px">Avg. score: PRIVATE</div>
+        <div style="font-size:0.65rem;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px" id="mpc-lbl-${i}">Avg. score: PRIVATE</div>
       </div>`).join('')}
     </div>
-    <label style="display:inline-flex;align-items:center;gap:7px;font-size:0.72rem;color:var(--text-dim);cursor:pointer;user-select:none;padding:6px 0 2px">
-      <input type="checkbox" id="mpc-reveal-toggle" onchange="mpcToggleReveal()" style="cursor:pointer;accent-color:var(--mint)">
-      ${c.revealToggleLabel}
-    </label>
     <div style="margin-bottom:10px">
       <div class="panel-title">${TIP('secret-share','Secret Shares Exchanged')}</div>
       <div class="share-flow" id="mpc-shares">
@@ -1256,7 +1319,8 @@ function renderMPC() {
   </div>
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   window.mpcRun = async function() {
     const myEpoch = renderEpoch;  // capture epoch — bail if module is switched mid-animation
@@ -1429,7 +1493,8 @@ function renderFL() {
   </div>
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   const instNodes = [
     { id: 'inst0', label: 'State A\nDept. of Ed', x: 0.12, y: 0.2 },
@@ -1691,7 +1756,8 @@ function renderSynth() {
 
     <!-- Insight box -->
     <div class="dp-insight" id="dp-insight"></div>
-  </div>`;
+  </div>
+  ${relatedModules(c.related)}`;
 
   // ── Synth toggle ────────────────────────────────────────────────────────────
   const makeTable = (data, isReal) => {
@@ -1841,6 +1907,7 @@ function renderTEE() {
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn btn-mint" id="tee-btn" onclick="teeRun()">▶ Process Data in Enclave</button>
       <button class="btn btn-outline" onclick="teeReset()">↺ Reset</button>
+      <button class="btn btn-outline" id="tee-access-btn" onclick="teeAttemptAccess()" disabled style="opacity:0.4;color:var(--coral);border-color:rgba(255,61,90,0.4)">⚡ Attempt Raw Access</button>
       <span id="tee-status" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim)"></span>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:rgba(255,201,64,0.06);border:1px solid rgba(255,201,64,0.15);border-radius:8px;font-size:0.75rem;color:var(--text-dim);font-family:var(--font-mono)">
@@ -1889,11 +1956,39 @@ function renderTEE() {
       setTimeout(() => { el.style.opacity = '1'; }, i * 350);
     });
     teePhase = 2;
+    const accessBtn = $('tee-access-btn');
+    if (accessBtn) { accessBtn.disabled = false; accessBtn.style.opacity = '1'; }
     } catch(e) { if (e !== BAIL) throw e; teePhase = 0; }
   };
+
+  window.teeAttemptAccess = async function() {
+    const myEpoch = renderEpoch;
+    const vault = $('tee-vault');
+    const label = $('tee-vault-label');
+    const status = $('tee-status');
+    const btn = $('tee-access-btn');
+    btn.disabled = true;
+    status.textContent = '⚡ Attempting to read raw plaintext from enclave memory…';
+    try {
+    await sleepOrBail(700, myEpoch);
+    vault.textContent = '🚫';
+    vault.style.color = 'var(--coral)';
+    vault.style.boxShadow = '0 0 0 4px rgba(255,61,90,0.35)';
+    label.textContent = 'ACCESS DENIED';
+    label.style.color = 'var(--coral)';
+    status.textContent = '🚫 Enclave rejected the request — raw data is inaccessible from outside the hardware boundary. Only code that has passed cryptographic attestation can read plaintext inside the enclave.';
+    await sleepOrBail(2400, myEpoch);
+    vault.textContent = '✅'; vault.style.color = ''; vault.style.boxShadow = '';
+    label.textContent = 'computation complete'; label.style.color = '';
+    btn.disabled = false;
+    } catch(e) { if (e !== BAIL) throw e; }
+  };
+
   window.teeReset = function() {
     teePhase = 0;
     $('tee-btn').disabled = false;
+    const accessBtn = $('tee-access-btn');
+    if (accessBtn) { accessBtn.disabled = true; accessBtn.style.opacity = '0.4'; }
     $('tee-status').textContent = '';
     $('tee-vault').textContent = '🔐';
     $('tee-vault').classList.remove('processing');
@@ -1941,6 +2036,28 @@ function renderHE() {
     return h.slice(0,8) + '…' + h.slice(-6);
   }
   let phase = 0;
+  let queryType = 'average';
+  const queryConfig = {
+    count:   { label: 'Count',   scheme: 'PHE (Paillier)', overhead: 1, schemeNote: 'Only homomorphic addition needed — the simplest, fastest HE variant.', opText: 'Counting records homomorphically (additive PHE / Paillier)' },
+    sum:     { label: 'Sum',     scheme: 'BFV',            overhead: 2, schemeNote: 'Integer arithmetic over ciphertext — BFV handles field sums well.', opText: 'Summing encrypted fields (BFV integer scheme)' },
+    average: { label: 'Average', scheme: 'CKKS',           overhead: 3, schemeNote: 'Approximate floating-point arithmetic — CKKS is the standard choice for averages.', opText: 'Computing homomorphic average (CKKS approximate arithmetic)' },
+  };
+
+  function heUpdateScheme() {
+    const qc = queryConfig[queryType];
+    const dots = [1,2,3].map(i =>
+      `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;background:${i<=qc.overhead?'var(--amber)':'var(--border2)'}"></span>`
+    ).join('');
+    const bar = $('he-scheme-bar');
+    if (bar) bar.innerHTML =
+      `<strong style="color:var(--amber)">FHE scheme:</strong>&nbsp;${qc.scheme}` +
+      `<span style="color:var(--border);margin:0 10px">|</span>` +
+      `<strong>Compute overhead:</strong>&nbsp;${dots}` +
+      `<span style="color:var(--border);margin:0 10px">|</span>` +
+      `<span>${qc.schemeNote}</span>`;
+    const s2 = $('he-s2-text');
+    if (s2) s2.textContent = `Vendor computes ${qc.label.toLowerCase()} on ciphertext — ${qc.scheme} scheme`;
+  }
 
   $('module-content').innerHTML = `
   <div class="module-header animate-in">
@@ -1949,6 +2066,16 @@ function renderHE() {
     <div class="module-def">${c.definition}</div>
     <div class="use-case"><strong>Education use case:</strong> ${c.useCase}</div>
     ${poorFitBlock(c.poorFit)}
+  </div>
+  <!-- Query type selector -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-title">Query Type — select what the vendor computes</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-mint he-qtype-btn" id="he-qtype-average" onclick="heSetQuery('average')">📊 Average</button>
+      <button class="btn btn-outline he-qtype-btn" id="he-qtype-sum" onclick="heSetQuery('sum')">➕ Sum</button>
+      <button class="btn btn-outline he-qtype-btn" id="he-qtype-count" onclick="heSetQuery('count')">🔢 Count</button>
+    </div>
+    <div id="he-scheme-bar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:0.76rem;color:var(--text-dim);padding:8px 12px;background:var(--panel2);border-radius:8px;font-family:var(--font-mono)"></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 80px 1fr 80px 1fr;gap:0;align-items:stretch;margin-bottom:16px" class="panel">
     <div>
@@ -1993,7 +2120,7 @@ function renderHE() {
   <div style="margin-bottom:16px" id="he-steps-wrap">
     <div class="step-list">
       <div class="step" id="he-s1"><div class="step-num">1</div><div>SEA encrypts data with their private key — ciphertext sent to vendor</div></div>
-      <div class="step" id="he-s2"><div class="step-num">2</div><div>Vendor performs computation on ciphertext (e.g., homomorphic average)</div></div>
+      <div class="step" id="he-s2"><div class="step-num">2</div><div id="he-s2-text">Vendor computes average on ciphertext — CKKS scheme</div></div>
       <div class="step" id="he-s3"><div class="step-num">3</div><div>Encrypted result returned to SEA</div></div>
       <div class="step" id="he-s4"><div class="step-num">4</div><div>SEA decrypts — vendor never learned the underlying values</div></div>
     </div>
@@ -2004,6 +2131,17 @@ function renderHE() {
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
   ${resources(c.resources)}`;
+
+  heUpdateScheme(); // populate scheme bar and step-2 text with default (average)
+
+  window.heSetQuery = function(qt) {
+    if (phase > 0) return; // don't allow changes mid-animation
+    queryType = qt;
+    ['average','sum','count'].forEach(t => {
+      $(`he-qtype-${t}`).className = 'btn ' + (t === qt ? 'btn-mint' : 'btn-outline') + ' he-qtype-btn';
+    });
+    heUpdateScheme();
+  };
 
   window.heRun = async function() {
     const myEpoch = renderEpoch;  // capture epoch — bail if module is switched mid-animation
@@ -2029,7 +2167,7 @@ function renderHE() {
     const indcpaNote = $('he-indcpa-note');
     if (indcpaNote) { indcpaNote.style.maxHeight = '80px'; indcpaNote.style.opacity = '1'; indcpaNote.style.marginTop = '8px'; indcpaNote.style.padding = '6px 10px'; }
     setStep(1);
-    $('he-compute-area').innerHTML = `<span style="color:var(--amber);animation:pulse 0.7s ease infinite;display:inline-block">⚙ Computing on ciphertext…</span>`;
+    $('he-compute-area').innerHTML = `<span style="color:var(--amber);animation:pulse 0.7s ease infinite;display:inline-block">⚙ ${queryConfig[queryType].opText}…</span>`;
     await sleepOrBail(1500, myEpoch);
     setStep(2);
     $('he-compute-area').innerHTML = `<span style="color:var(--mint)">✓ Homomorphic ops complete</span>`;
@@ -2079,6 +2217,30 @@ function renderHE() {
 function renderTok() {
   // Pull all editable text from CONTENT.tok
   const c = CONTENT.tok;
+
+  // FNV-1a hash → 6-char hex. Used exclusively by the normalization demo.
+  function tokNameHash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h = ((h ^ str.charCodeAt(i)) >>> 0);
+      h = (Math.imul(h, 16777619) >>> 0);
+    }
+    return h.toString(16).slice(-6).padStart(6, '0');
+  }
+
+  // Normalize a name: uppercase, strip combining diacritics, remove non-alphanumeric chars.
+  function tokNormalize(name) {
+    return name.toUpperCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Z0-9 ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const normCanonicalName  = 'Elena Vasquez';
+  const normCanonicalToken = 'TKN-NORM-' + tokNameHash(normCanonicalName);
+
   const rawRecord = {
     name: 'Elena Vasquez', ssn: '234-56-7890', studentId: 'MD-2024-04821',
     dob: '2006-04-18', district: 'Montgomery Co.', gpa: '3.4'
@@ -2129,6 +2291,7 @@ function renderTok() {
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn btn-mint" id="tok-btn" onclick="tokRun()">▶ Tokenize Record</button>
       <button class="btn btn-outline" onclick="tokDetok()" id="tok-detok-btn">🔍 Authorized Lookup (Re-identify)</button>
+      <button class="btn btn-outline" onclick="tokRetokenize()" id="tok-retok-btn" disabled style="opacity:0.4">🔄 Re-tokenize (Rotate Tokens)</button>
       <button class="btn btn-outline" onclick="tokReset()">↺ Reset</button>
     </div>
     <div id="tok-status" style="margin-top:8px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim)"></div>
@@ -2136,9 +2299,86 @@ function renderTok() {
   <div style="padding:10px 14px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:8px;font-size:0.75rem;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:16px">
     <strong style="color:var(--blue)">Tokenization vs. encryption:</strong> ${c.comparisonNote.replace('vault', `${TIP('token-vault','vault')}`).replace('format-preserving', `${TIP('format-preserving','format-preserving')}`)}
   </div>
+
+  <!-- ── INPUT CONSISTENCY CHALLENGE ──────────────────────────────────────── -->
+  <div class="panel animate-in" style="margin-bottom:16px;animation-delay:.15s">
+    <div class="panel-title" style="color:var(--amber)">⚠ The Input Consistency Problem</div>
+    <p style="font-size:0.82rem;color:var(--text);line-height:1.65;margin-bottom:14px">
+      Tokenization only works for cross-agency linkage if <strong>identical PII produces identical tokens</strong>.
+      A token is derived from the raw string — so any formatting difference produces a completely different token,
+      silently breaking the link between records that belong to the same person.
+    </p>
+
+    <!-- Canonical record row -->
+    <div style="margin-bottom:14px;padding:10px 14px;background:rgba(0,229,160,0.04);
+                border:1px solid rgba(0,229,160,0.18);border-radius:8px">
+      <div style="font-family:var(--font-mono);font-size:0.67rem;color:var(--text-dim);
+                  letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px">
+        Canonical record — as stored in Agency A:
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--mint)">${normCanonicalName}</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--mint)">${normCanonicalToken}</span>
+        <span class="badge badge-green" style="font-size:0.62rem">canonical token</span>
+      </div>
+    </div>
+
+    <!-- Variant input area -->
+    <div style="margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:0.67rem;color:var(--text-dim);
+                  letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">
+        Try entering the same name as Agency B might record it:
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn btn-outline" onclick="tokNormTest('elena vasquez')"
+          style="font-size:0.75rem;font-family:var(--font-mono)">elena vasquez</button>
+        <button class="btn btn-outline" onclick="tokNormTest('E. Vasquez')"
+          style="font-size:0.75rem;font-family:var(--font-mono)">E. Vasquez</button>
+        <button class="btn btn-outline" onclick="tokNormTest('Elena Vasquéz')"
+          style="font-size:0.75rem;font-family:var(--font-mono)">Elena Vasquéz</button>
+      </div>
+      <input id="norm-input" type="text" placeholder="or type your own variant…"
+        oninput="tokNormTest(this.value)"
+        style="width:100%;font-family:var(--font-mono);font-size:0.8rem;
+               background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+               color:var(--text);padding:8px 12px;outline:none;
+               transition:border-color 0.15s"
+        onfocus="this.style.borderColor='var(--blue)'"
+        onblur="this.style.borderColor='var(--border)'"
+      >
+    </div>
+
+    <!-- Token comparison result -->
+    <div id="norm-result" style="min-height:44px;margin-bottom:14px"></div>
+
+    <!-- Normalization fix -->
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn btn-outline" id="norm-fix-btn" onclick="tokNormFix()"
+          style="font-size:0.8rem">Apply Normalization</button>
+        <span style="font-size:0.74rem;color:var(--text-dim);font-family:var(--font-mono)">
+          uppercase · strip accents · remove punctuation
+        </span>
+      </div>
+      <div id="norm-fix-result"></div>
+      <p style="margin-top:10px;font-size:0.76rem;color:var(--text-dim);line-height:1.6;
+                padding:8px 12px;background:rgba(255,201,64,0.04);
+                border-left:3px solid rgba(255,201,64,0.35);border-radius:0 6px 6px 0">
+        <strong style="color:var(--amber)">Governance implication:</strong>
+        Normalization resolves case and accent variants but cannot expand abbreviations.
+        Cross-agency data governance agreements must specify <strong style="color:var(--text)">exact
+        field-level formatting standards</strong> — format, casing, name order, and character set — before
+        tokenization can reliably link the same person across systems.
+      </p>
+    </div>
+  </div>
+  <!-- ── /INPUT CONSISTENCY CHALLENGE ─────────────────────────────────────── -->
+
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   window.tokRun = async function() {
     const myEpoch = renderEpoch;  // capture epoch — bail if module is switched mid-animation
@@ -2168,7 +2408,44 @@ function renderTok() {
         <span style="color:var(--coral)">${rawRecord[k]}</span>
       </div>`).join('');
     $('tok-status').textContent = '✓ PII fields replaced. Tokenized record is safe to share downstream.';
+    const retokBtn = $('tok-retok-btn');
+    if (retokBtn) { retokBtn.disabled = false; retokBtn.style.opacity = '1'; }
     } catch(e) { if (e !== BAIL) throw e; tokPhase = 0; }
+  };
+
+  window.tokRetokenize = async function() {
+    if (tokPhase === 0) {
+      $('tok-status').textContent = '⚠ Tokenize the record first before rotating tokens.';
+      return;
+    }
+    const myEpoch = renderEpoch;
+    const retokBtn = $('tok-retok-btn');
+    retokBtn.disabled = true;
+    $('tok-status').textContent = '🔄 Rotating tokens — vault issues new tokens for same PII…';
+    try {
+    await sleepOrBail(600, myEpoch);
+    const freshToken = prefix => `${prefix}-${Math.random().toString(16).slice(2, 8)}`;
+    const newTokens = {
+      name: freshToken('TKN-NAME'), ssn: freshToken('TKN-SSN'),
+      studentId: freshToken('TKN-ID'), dob: freshToken('TKN-DOB'),
+    };
+    for (const k of piiFields) {
+      const valEl = $(`tok-resval-${k}`), resEl = $(`tok-res-${k}`);
+      valEl.textContent = newTokens[k];
+      valEl.style.color = 'var(--blue)';
+      resEl.style.borderColor = 'rgba(77,159,255,0.4)';
+      resEl.style.background = 'rgba(77,159,255,0.06)';
+      await sleepOrBail(250, myEpoch);
+    }
+    $('tok-vault-contents').innerHTML = piiFields.map(k =>
+      `<div style="display:flex;gap:16px;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--blue);min-width:160px">${newTokens[k]}</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span style="color:var(--coral)">${rawRecord[k]}</span>
+      </div>`).join('');
+    $('tok-status').textContent = '✓ Token rotation complete — new tokens issued, PII unchanged. Any downstream system holding old tokens can no longer re-identify without vault re-authorization.';
+    retokBtn.disabled = false;
+    } catch(e) { if (e !== BAIL) throw e; retokBtn.disabled = false; }
   };
 
   window.tokDetok = async function() {
@@ -2194,7 +2471,9 @@ function renderTok() {
   window.tokReset = function() {
     tokPhase = 0;
     $('tok-btn').disabled = false;
-    $('tok-detok-btn').disabled = true;
+    $('tok-detok-btn').disabled = false;
+    const retokBtn = $('tok-retok-btn');
+    if (retokBtn) { retokBtn.disabled = true; retokBtn.style.opacity = '0.4'; }
     $('tok-status').textContent = '';
     $('tok-vault-contents').textContent = 'Vault is empty — no tokens issued yet.';
     Object.keys(rawRecord).forEach(k => {
@@ -2205,6 +2484,93 @@ function renderTok() {
       valEl.textContent = '[pending]';
       valEl.style.color = 'var(--text-dim)';
     });
+    // Also clear the normalization demo
+    const normResult = $('norm-result'), normFix = $('norm-fix-result'), normIn = $('norm-input');
+    if (normResult) normResult.innerHTML = '';
+    if (normFix)    normFix.innerHTML = '';
+    if (normIn)     normIn.value = '';
+  };
+
+  // ── Normalization demo handlers ────────────────────────────────────────────
+  // tokNormTest: called on every keystroke / preset-button click.
+  //   Computes the token for the entered variant and compares to the canonical.
+  window.tokNormTest = function(input) {
+    const inputEl = $('norm-input');
+    if (inputEl && inputEl.value !== input) inputEl.value = input;
+    const trimmed = (input || '').trim();
+    const resultEl = $('norm-result');
+    const fixEl    = $('norm-fix-result');
+    if (!resultEl) return;
+    if (!trimmed) { resultEl.innerHTML = ''; if (fixEl) fixEl.innerHTML = ''; return; }
+
+    const variantToken = 'TKN-NORM-' + tokNameHash(trimmed);
+    const matches      = variantToken === normCanonicalToken;
+
+    resultEl.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;
+                  background:${matches ? 'rgba(0,229,160,0.05)' : 'rgba(255,61,90,0.05)'};
+                  border:1px solid ${matches ? 'rgba(0,229,160,0.2)' : 'rgba(255,61,90,0.2)'};
+                  border-radius:8px">
+        <span style="font-family:var(--font-mono);font-size:0.8rem;color:var(--text)">${trimmed}</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span style="font-family:var(--font-mono);font-size:0.8rem;
+                     color:${matches ? 'var(--mint)' : 'var(--coral)'}">${variantToken}</span>
+        <span class="badge ${matches ? 'badge-green' : 'badge-red'}" style="margin-left:auto;font-size:0.62rem">
+          ${matches ? '✓ Matches canonical' : '✗ Different token'}
+        </span>
+      </div>
+      ${!matches ? `<div style="margin-top:6px;font-size:0.74rem;color:var(--coral);
+                                font-family:var(--font-mono);line-height:1.5">
+        These are treated as two different people — the linkage is silently broken.</div>` : ''}`;
+    if (fixEl) fixEl.innerHTML = ''; // clear previous fix result when input changes
+  };
+
+  // tokNormFix: applies normalization to the current input and shows whether it resolves.
+  window.tokNormFix = function() {
+    const inputEl = $('norm-input');
+    const input   = inputEl ? inputEl.value.trim() : '';
+    const fixEl   = $('norm-fix-result');
+    if (!fixEl) return;
+    if (!input) {
+      fixEl.innerHTML = `<span style="color:var(--text-dim);font-family:var(--font-mono);font-size:0.78rem">
+        Enter a name variant above, then click Apply Normalization.</span>`;
+      return;
+    }
+
+    const normalizedInput     = tokNormalize(input);
+    const normalizedCanonical = tokNormalize(normCanonicalName);
+    const normalizedToken     = 'TKN-NORM-' + tokNameHash(normalizedInput);
+    const canonNormToken      = 'TKN-NORM-' + tokNameHash(normalizedCanonical);
+    const resolved            = normalizedToken === canonNormToken;
+
+    fixEl.innerHTML = `
+      <div style="font-family:var(--font-mono);font-size:0.76rem;line-height:2;
+                  padding:10px 14px;border:1px solid var(--border);border-radius:8px;
+                  background:var(--panel2)">
+        <div style="color:var(--text-dim)">
+          Input after normalization:&nbsp;
+          <strong style="color:var(--text)">${normalizedInput || '(empty)'}</strong>
+        </div>
+        <div style="color:var(--text-dim)">
+          Canonical after normalization:&nbsp;
+          <strong style="color:var(--text)">${normalizedCanonical}</strong>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <span style="color:var(--text)">${input}</span>
+          <span style="color:var(--text-dim)">normalized →</span>
+          <span style="font-family:var(--font-mono);
+                       color:${resolved ? 'var(--mint)' : 'var(--amber)'}">${normalizedToken}</span>
+          ${resolved
+            ? `<span class="badge badge-green" style="font-size:0.62rem">✓ Resolved — same token</span>`
+            : `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;
+                            font-size:0.62rem;font-weight:700;letter-spacing:0.04em;
+                            background:rgba(255,201,64,0.12);color:var(--amber);
+                            border:1px solid rgba(255,201,64,0.35)">
+                ✗ Still differs — normalization cannot expand abbreviations
+               </span>`
+          }
+        </div>
+      </div>`;
   };
 }
 
@@ -2778,11 +3144,11 @@ function renderCompare() {
         <thead>
           <tr>
             <th>PET Category</th>
-            <th>Output interpretable?</th>
-            <th>Data Utility impact</th>
+            <th>${thTip('Output interpretable?', 'Whether the technique\'s outputs can be read directly by an analyst. ✓ = result is a statistic, record, or readable value. ✗ = output is ciphertext or encoded data requiring decryption before use.')}</th>
+            <th>${thTip('Data Utility impact', 'How much the technique reduces the usefulness of the data for analysis. ✓ High = minimal utility loss; ~ Medium = some degradation in precision or granularity; ✗ Low = significant information loss.')}</th>
             <th>${thTip('Privacy Guarantee', "Rates how formally the technique's privacy protection is proven. 'Proven' = mathematical proof exists (ε-DP, cryptographic). 'Computational' = security relies on hardness of reversing a computation, not a formal proof. 'Model-dependent' = protection depends on how the generative model was trained. 'Hardware attestation' = trust rooted in verified hardware, not math alone.")}</th>
             <th>${thTip('Complexity', '1 dot = drop-in tools exist, minimal specialist knowledge needed. 3 dots = moderate engineering effort, some specialist knowledge required. 5 dots = requires cryptographic expertise, significant infrastructure investment, and ongoing operational governance.')}</th>
-            <th>Primary attack risk</th>
+            <th>${thTip('Primary attack risk', 'The most realistic known attack that could compromise the privacy protection this technique provides. Not all risks are equally applicable in every deployment context.')}</th>
             <th>Best for</th>
           </tr>
         </thead>
@@ -2807,11 +3173,11 @@ function renderCompare() {
         <thead>
           <tr>
             <th>Method</th>
-            <th>Output interpretable?</th>
-            <th>Data Utility impact</th>
+            <th>${thTip('Output interpretable?', 'Whether the technique\'s outputs can be read directly by an analyst. ✓ = result is a statistic, record, or readable value. ✗ = output is ciphertext or encoded data requiring decryption before use.')}</th>
+            <th>${thTip('Data Utility impact', 'How much the technique reduces the usefulness of the data for analysis. ✓ High = minimal utility loss; ~ Medium = some degradation in precision or granularity; ✗ Low = significant information loss.')}</th>
             <th>Privacy Guarantee</th>
             <th>${thTip('Complexity', '1 dot = drop-in tools exist, minimal specialist knowledge needed. 3 dots = moderate engineering effort, some specialist knowledge required. 5 dots = requires cryptographic expertise, significant infrastructure investment, and ongoing operational governance.')}</th>
-            <th>Primary attack risk</th>
+            <th>${thTip('Primary attack risk', 'The most realistic known attack that could compromise the privacy protection this technique provides. Not all risks are equally applicable in every deployment context.')}</th>
             <th>Best for</th>
           </tr>
         </thead>
@@ -3519,6 +3885,81 @@ function renderZKP() {
 
 // ── Module registry ───────────────────────────────────────────────────────────
 /* =============================================================================
+   Assessment support tables
+   Referenced by renderAbout()'s assessment phase logic.
+   ASSESS_ROLE_PRIORITIES: ordered list of module keys, most relevant first, per role.
+   ASSESS_ROLE_NOTES: one-sentence "why it matters for you" per role × module.
+   ============================================================================= */
+const ASSESS_ROLE_PRIORITIES = {
+  sea:        ['tok','pprl','dp','synth','tee','mpc','fl','he'],
+  researcher: ['dp','synth','fl','pprl','mpc','tee','he','tok'],
+  edtech:     ['tok','tee','dp','pprl','he','synth','mpc','fl'],
+  policy:     ['dp','synth','pprl','tok','mpc','fl','tee','he'],
+  other:      ['dp','synth','pprl','tok','mpc','fl','tee','he'],
+};
+
+const ASSESS_ROLE_NOTES = {
+  sea: {
+    dp:    'Your primary tool for suppression-free aggregate reporting and FERPA-compliant public-use data releases.',
+    pprl:  'Your primary cross-dataset linkage tool: K–12 to postsecondary and workforce data without a shared student ID.',
+    mpc:   'Enables collaborative computation across districts or SEAs (e.g., regional benchmarks) without sharing raw data.',
+    fl:    'Train early-warning models collaboratively across states — each state\'s student data stays local.',
+    synth: 'Share research-ready datasets with external researchers without FERPA obligations, when DP-trained.',
+    tee:   'Underpins secure research platforms like SafeInsights. Understand what enclave-based access means for your governance.',
+    he:    'Still emerging for production. Monitor for outsourcing analytics to cloud vendors who should not see raw data.',
+    tok:   'Operational backbone for partner data sharing. Vault governance is your central privacy control.',
+  },
+  researcher: {
+    dp:    'Formal privacy guarantees for aggregate analyses you publish. Some data use agreements now require DP compliance.',
+    pprl:  'Enables longitudinal cross-agency studies when no shared direct identifier exists.',
+    mpc:   'Compute joint statistics across datasets from different agencies without centralizing any records.',
+    fl:    'Train predictive models collaboratively across multiple state datasets without centralizing student records.',
+    synth: 'Obtain shareable, record-level datasets from SEAs for reproducible research, tool development, and training.',
+    tee:   'Secure research platforms let you run analyses on sensitive data without the SEA exporting records.',
+    he:    'Emerging: run approved queries on SEA-held encrypted data without accessing plaintext records.',
+    tok:   'Understand how your matched dataset was built — stable vault governance is critical for linkage reliability.',
+  },
+  edtech: {
+    dp:    'Enables privacy-preserving product analytics: measure learning outcomes without exposing individual user behavior.',
+    pprl:  'Relevant if your product needs cross-agency student matching without receiving raw PII from each system.',
+    mpc:   'Secure benchmarking: compare your product\'s outcomes against peers without any party sharing raw result data.',
+    fl:    'Train personalization models across multiple district deployments without centralizing interaction data.',
+    synth: 'Generate synthetic training datasets for ML models or demo environments containing no real student records.',
+    tee:   'TEE-based platforms are increasingly required by SEA data use agreements. Know what attestation means for your integration.',
+    he:    'Long-term direction for analytics services where the cloud provider should not see plaintext data.',
+    tok:   'How SEAs manage student IDs in partner-shared data. Your vault integration is a key data governance concern.',
+  },
+  policy: {
+    dp:    'Know what ε means, what makes a DP release credible, and how to evaluate vendor claims. NIST SP 800-226 is your reference.',
+    pprl:  'PPRL-based linkage still requires FERPA legal basis — linkage outputs identify students. DUAs must address this.',
+    mpc:   'Assess whether a coordinator role triggers FERPA school official exception requirements, even with only aggregate outputs.',
+    fl:    'Gradient sharing can leak individual data without DP-SGD. Understand what a complete FL deployment requires before approving.',
+    synth: 'DP-trained synthesis may satisfy FERPA de-identification provisions; plain synthesis typically does not.',
+    tee:   'Enclave isolation satisfies "reasonable methods" for access control — but FERPA legal basis is still required.',
+    he:    'Still maturing. Monitor proposed use cases that outsource SEA analytics with claimed cryptographic privacy.',
+    tok:   'Tokenized records are still FERPA-regulated — tokens are pseudonyms, not de-identification. DUAs must address vault access.',
+  },
+  other: {
+    dp:    'The foundational formal privacy technique. Understanding DP unlocks nearly every modern PET.',
+    pprl:  'The privacy-preserving alternative to raw record exchange for cross-system identity matching.',
+    mpc:   'How multiple parties compute a joint answer without sharing private inputs.',
+    fl:    'How ML models train across distributed datasets without centralizing records.',
+    synth: 'How realistic datasets can be generated for sharing — and when that protection is or isn\'t sufficient.',
+    tee:   'How hardware-isolated processing enables sensitive analytics with cryptographic access controls.',
+    he:    'How arithmetic computations run on encrypted data without a decryption step.',
+    tok:   'How PII fields are replaced with reversible pseudonyms for cross-system data sharing.',
+  },
+};
+
+const ASSESS_MOD_LABELS = {
+  dp: 'Differential Privacy', pprl: 'Privacy-Preserving Record Linkage',
+  mpc: 'Secure Multi-Party Computation', fl: 'Federated Learning',
+  synth: 'Synthetic Data', tee: 'Trusted Execution Environments',
+  he: 'Homomorphic Encryption', tok: 'Tokenization',
+};
+
+
+/* =============================================================================
    About page — displayed on first load; return by clicking the FPF logo or
    the site title in the header.
    All copy is sourced from CONTENT.about in content.js — edit text there.
@@ -3565,6 +4006,10 @@ function renderAbout() {
     ${paragraphsHTML}
     ${startHereHTML}
 
+    <!-- ── Assessment block ──────────────────────────────────────────────── -->
+    <div id="about-assessment"></div>
+    <!-- ── /Assessment block ─────────────────────────────────────────────── -->
+
     <div class="about-explore">
       <div class="about-explore-label">${a.exploreLabel}</div>
       ${chipsHTML}
@@ -3572,6 +4017,404 @@ function renderAbout() {
     </div>
   </div>
   `;
+
+  // ── Assessment wizard state ──────────────────────────────────────────────
+  const quiz = a.assessment.quizModules;
+  let assPhase   = 'entry';   // 'entry' | 'role' | 'quiz' | 'results'
+  let assRole    = null;       // selected role key
+  let assPage    = 0;          // current module index (0 – quiz.length-1)
+  let assAnswers = {};         // { 'dp-0': 1, 'dp-1': 3, ... }
+
+  function assCalcScores() {
+    const scores = {};
+    for (const mod of quiz) {
+      let s = 0;
+      mod.questions.forEach((q, qi) => {
+        if (assAnswers[`${mod.key}-${qi}`] === q.correct) s++;
+      });
+      scores[mod.key] = s;
+    }
+    return scores;
+  }
+
+  function assLevelInfo(score) {
+    if (score === 2) return { icon: '✓', color: 'var(--mint)',  label: 'Solid foundation', action: 'Dive into 📝 Notes and 📚 Resources for advanced depth.' };
+    if (score === 1) return { icon: '◐', color: 'var(--amber)', label: 'Building',          action: 'Re-visit the simulation and read the complete 📝 Notes section.' };
+    return             { icon: '○', color: 'var(--coral)',  label: 'Review recommended', action: 'Work through the full simulation, read all 📝 Notes, and explore 📚 Resources.' };
+  }
+
+  function assBuildPath(role, scores) {
+    const priorities = ASSESS_ROLE_PRIORITIES[role] || ASSESS_ROLE_PRIORITIES.other;
+    return priorities
+      .map((key, idx) => ({ key, score: scores[key] ?? 0, roleRank: idx }))
+      .sort((a, b) => a.score !== b.score ? a.score - b.score : a.roleRank - b.roleRank);
+  }
+
+  function assRender() {
+    const el = $('about-assessment');
+    if (!el) return;
+    const ass = a.assessment;
+
+    // ── ENTRY ────────────────────────────────────────────────────────────────
+    if (assPhase === 'entry') {
+      el.innerHTML = `
+        <div style="margin:20px 0 24px;padding:14px 18px;
+                    border:1px solid var(--border2);border-radius:8px;
+                    background:rgba(77,159,255,0.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div style="font-size:.75rem;font-weight:700;color:var(--blue);
+                        letter-spacing:.05em">${ass.heading.toUpperCase()}</div>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;
+                      margin-bottom:12px">${ass.intro}</div>
+          <button class="btn btn-outline" onclick="assStart()"
+            style="font-size:0.78rem">${ass.cta}</button>
+        </div>`;
+      return;
+    }
+
+    // ── ROLE SELECTION ───────────────────────────────────────────────────────
+    if (assPhase === 'role') {
+      const cards = ass.roles.map(r => `
+        <div onclick="assSelectRole('${r.key}')"
+          style="cursor:pointer;padding:12px 14px;border-radius:8px;
+                 border:2px solid ${assRole === r.key ? 'var(--blue)' : 'var(--border)'};
+                 background:${assRole === r.key ? 'rgba(77,159,255,0.08)' : 'var(--panel)'};
+                 transition:border-color 0.15s,background 0.15s"
+          onmouseover="this.style.borderColor='var(--blue)'"
+          onmouseout="this.style.borderColor='${assRole === r.key ? 'var(--blue)' : 'var(--border)'}'">
+          <div style="font-size:1.1rem;margin-bottom:4px">${r.icon}</div>
+          <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;
+                      color:var(--text-bright);margin-bottom:3px">${r.label}</div>
+          <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.45">${r.desc}</div>
+        </div>`).join('');
+      el.innerHTML = `
+        <div style="margin:20px 0 24px;padding:16px 18px;border:1px solid var(--border2);
+                    border-radius:8px;background:rgba(77,159,255,0.04)">
+          <div style="font-size:.75rem;font-weight:700;color:var(--blue);
+                      letter-spacing:.05em;margin-bottom:4px">${ass.heading.toUpperCase()}</div>
+          <div style="font-size:.82rem;font-weight:700;color:var(--text-bright);
+                      margin-bottom:4px">Step 1 of 2 — Select your role</div>
+          <div style="font-size:.76rem;color:var(--text-dim);margin-bottom:14px">
+            Your role shapes which modules are prioritized in your learning path.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+                      gap:10px;margin-bottom:10px">${cards}</div>
+          <div style="font-size:.72rem;color:var(--text-dim);margin-top:6px;line-height:1.5">
+            ${ass.rolesNote}
+          </div>
+        </div>`;
+      return;
+    }
+
+    // ── QUIZ ─────────────────────────────────────────────────────────────────
+    if (assPhase === 'quiz') {
+      const mod        = quiz[assPage];
+      const total      = quiz.length;
+      const pct        = Math.round((assPage / total) * 100);
+      const answered   = mod.questions.filter((_, qi) => assAnswers[`${mod.key}-${qi}`] !== undefined).length;
+      const canAdvance = true; // allow skipping (unanswered = 0 score)
+
+      const qBlocks = mod.questions.map((q, qi) => {
+        const selIdx = assAnswers[`${mod.key}-${qi}`];
+        const opts = q.options.map((opt, oi) => {
+          const sel = selIdx === oi;
+          return `<div onclick="assSelectOption('${mod.key}',${qi},${oi})"
+            style="cursor:pointer;padding:9px 12px;margin-bottom:6px;border-radius:6px;
+                   border:1px solid ${sel ? 'var(--blue)' : 'var(--border)'};
+                   background:${sel ? 'rgba(77,159,255,0.10)' : 'var(--panel)'};
+                   font-size:0.78rem;color:${sel ? 'var(--text-bright)' : 'var(--text)'};
+                   transition:border-color 0.12s,background 0.12s;
+                   display:flex;align-items:flex-start;gap:10px"
+            onmouseover="if(!${sel}){this.style.borderColor='var(--border2)';this.style.background='var(--panel2)'}"
+            onmouseout="if(!${sel}){this.style.borderColor='var(--border)';this.style.background='var(--panel)'}">
+              <span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:700;
+                           min-width:18px;padding-top:1px;
+                           color:${sel ? 'var(--blue)' : 'var(--text-dim)'}">
+                ${String.fromCharCode(65 + oi)}
+              </span>
+              <span>${opt}</span>
+            </div>`;
+        }).join('');
+        return `
+          <div style="margin-bottom:16px">
+            <div style="font-size:.78rem;font-weight:700;color:var(--text-bright);
+                        margin-bottom:8px;line-height:1.5">
+              Q${qi+1}. ${q.q}
+            </div>
+            ${opts}
+            ${selIdx === undefined ? '<div style="font-size:.7rem;color:var(--text-dim);font-style:italic;margin-top:2px">Click an option — or skip to score 0 for this question.</div>' : ''}
+          </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div style="margin:20px 0 24px;padding:16px 18px;border:1px solid var(--border2);
+                    border-radius:8px;background:rgba(77,159,255,0.04)">
+          <div style="font-size:.75rem;font-weight:700;color:var(--blue);
+                      letter-spacing:.05em;margin-bottom:4px">${ass.heading.toUpperCase()}</div>
+          <div style="font-size:.82rem;font-weight:700;color:var(--text-bright);
+                      margin-bottom:10px">
+            Step 2 of 2 — Module ${assPage+1} of ${total}: ${mod.label}
+          </div>
+          <!-- Progress bar -->
+          <div style="height:4px;background:var(--border);border-radius:2px;
+                      margin-bottom:14px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:var(--blue);
+                        border-radius:2px;transition:width 0.3s"></div>
+          </div>
+          ${qBlocks}
+          <!-- Navigation -->
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+                      border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+            <button class="btn btn-outline" onclick="assPrevPage()"
+              style="font-size:0.78rem">← ${assPage === 0 ? 'Back to role' : 'Previous'}</button>
+            <button class="btn btn-mint" onclick="assNextPage()"
+              style="font-size:0.78rem">
+              ${assPage < total-1 ? 'Next module →' : 'See my learning path →'}
+            </button>
+            <span style="font-size:.7rem;color:var(--text-dim);margin-left:auto">
+              ${answered}/${mod.questions.length} answered
+            </span>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // ── RESULTS ──────────────────────────────────────────────────────────────
+    if (assPhase === 'results') {
+      const scores   = assCalcScores();
+      const roleObj  = ass.roles.find(r => r.key === assRole) || ass.roles[4];
+      const path     = assBuildPath(assRole, scores);
+      const roleNotes= ASSESS_ROLE_NOTES[assRole] || ASSESS_ROLE_NOTES.other;
+
+      // Score summary table
+      const summaryRows = quiz.map(mod => {
+        const s = scores[mod.key] ?? 0;
+        const lv = assLevelInfo(s);
+        return `<tr>
+          <td style="padding:5px 10px;font-size:.78rem;color:var(--text)">${mod.label}</td>
+          <td style="padding:5px 10px;font-family:var(--font-mono);font-size:.75rem;
+                     text-align:center;color:var(--text)">${s}/2</td>
+          <td style="padding:5px 10px;font-size:.72rem;color:${lv.color}">
+            ${lv.icon} ${lv.label}
+          </td>
+        </tr>`;
+      }).join('');
+
+      // Tier buckets
+      const tier0 = path.filter(m => m.score === 0);
+      const tier1 = path.filter(m => m.score === 1);
+      const tier2 = path.filter(m => m.score === 2);
+
+      function pathCard(m, rank) {
+        const lv   = assLevelInfo(m.score);
+        const note = roleNotes[m.key] || '';
+        return `
+          <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;
+                      background:var(--panel);margin-bottom:8px">
+            <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+              <span style="font-family:var(--font-mono);font-size:0.68rem;font-weight:700;
+                           padding:2px 8px;border-radius:10px;
+                           background:rgba(77,159,255,0.12);color:var(--blue);
+                           border:1px solid rgba(77,159,255,0.25);white-space:nowrap">#${rank}</span>
+              <button onclick="showModule('${m.key}')"
+                style="background:none;border:none;cursor:pointer;
+                       font-family:var(--font-mono);font-size:.8rem;font-weight:700;
+                       color:var(--blue);padding:0;text-align:left"
+                onmouseover="this.style.color='var(--text-bright)'"
+                onmouseout="this.style.color='var(--blue)'">${ASSESS_MOD_LABELS[m.key]} →</button>
+              <span style="margin-left:auto;font-size:.68rem;color:${lv.color};
+                           font-family:var(--font-mono)">${lv.icon} ${lv.label}</span>
+            </div>
+            ${note ? `<div style="font-size:.74rem;color:var(--text-dim);
+                                  margin-top:6px;line-height:1.5">${note}</div>` : ''}
+            <div style="font-size:.72rem;color:var(--text-dim);margin-top:5px;
+                        padding:5px 8px;border-left:2px solid ${lv.color};
+                        background:rgba(0,0,0,0.15);border-radius:0 4px 4px 0">
+              ${lv.action}
+            </div>
+          </div>`;
+      }
+
+      let rank = 0;
+      const tierBlock = (items, title, color) => !items.length ? '' : `
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.06em;
+                    text-transform:uppercase;color:${color};margin:14px 0 8px">${title}</div>
+        ${items.map(m => pathCard(m, ++rank)).join('')}`;
+
+      el.innerHTML = `
+        <div style="margin:20px 0 24px;padding:16px 18px;border:1px solid var(--border2);
+                    border-radius:8px;background:rgba(77,159,255,0.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div>
+              <div style="font-size:.75rem;font-weight:700;color:var(--blue);
+                          letter-spacing:.05em;margin-bottom:2px">${ass.heading.toUpperCase()}</div>
+              <div style="font-size:.8rem;color:var(--text-dim)">
+                Role: <strong style="color:var(--text)">${roleObj.label}</strong>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="assDownload()"
+                style="font-size:.75rem">${ass.downloadLabel}</button>
+              <button class="btn btn-outline" onclick="assRestart()"
+                style="font-size:.75rem">${ass.restartLabel}</button>
+            </div>
+          </div>
+
+          <!-- Knowledge summary -->
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;
+                      margin-bottom:4px">
+            <div style="padding:8px 10px;background:var(--panel);
+                        font-size:.7rem;font-weight:700;color:var(--text-dim);
+                        letter-spacing:.06em;text-transform:uppercase;
+                        border-bottom:1px solid var(--border)">
+              Knowledge assessment summary
+            </div>
+            <table style="width:100%;border-collapse:collapse;background:var(--panel)">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="padding:5px 10px;font-family:var(--font-mono);font-size:.68rem;
+                             font-weight:700;color:var(--text-dim);text-align:left">Module</th>
+                  <th style="padding:5px 10px;font-family:var(--font-mono);font-size:.68rem;
+                             font-weight:700;color:var(--text-dim);text-align:center">Score</th>
+                  <th style="padding:5px 10px;font-family:var(--font-mono);font-size:.68rem;
+                             font-weight:700;color:var(--text-dim);text-align:left">Level</th>
+                </tr>
+              </thead>
+              <tbody>${summaryRows}</tbody>
+            </table>
+          </div>
+
+          <!-- Learning path -->
+          <div style="margin-top:16px">
+            <div style="font-size:.82rem;font-weight:700;color:var(--text-bright);
+                        margin-bottom:4px">Your recommended learning path</div>
+            <div style="font-size:.74rem;color:var(--text-dim);margin-bottom:10px;
+                        line-height:1.5">
+              Sorted by knowledge gaps first, then by relevance to your role. Click any module name to open it.
+            </div>
+            ${tierBlock(tier0, '① Fill knowledge gaps — score 0/2', 'var(--coral)')}
+            ${tierBlock(tier1, '② Build on partial knowledge — score 1/2', 'var(--amber)')}
+            ${tierBlock(tier2, '③ Advanced depth — score 2/2', 'var(--mint)')}
+          </div>
+        </div>`;
+
+      // Scroll the results into view
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    }
+  } // end assRender
+
+  // ── Assessment window handlers ───────────────────────────────────────────
+  window.assStart        = () => { assPhase = 'role'; assRender(); };
+  window.assSelectRole   = (key) => {
+    assRole = key;
+    // Re-render role page to show selection highlight, then advance after short delay
+    assRender();
+    setTimeout(() => { assPhase = 'quiz'; assPage = 0; assRender(); }, 220);
+  };
+  window.assSelectOption = (modKey, qi, oi) => {
+    assAnswers[`${modKey}-${qi}`] = oi;
+    assRender();
+  };
+  window.assNextPage = () => {
+    if (assPage < quiz.length - 1) { assPage++; assRender(); }
+    else { assPhase = 'results'; assRender(); }
+    const el = $('about-assessment');
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+  window.assPrevPage = () => {
+    if (assPage > 0) { assPage--; }
+    else { assPhase = 'role'; }
+    assRender();
+    const el = $('about-assessment');
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+  window.assRestart = () => {
+    assPhase = 'entry'; assRole = null; assPage = 0; assAnswers = {};
+    assRender();
+  };
+
+  window.assDownload = () => {
+    const ass     = a.assessment;
+    const scores  = assCalcScores();
+    const roleObj = ass.roles.find(r => r.key === assRole) || ass.roles[4];
+    const path    = assBuildPath(assRole, scores);
+    const roleNotes = ASSESS_ROLE_NOTES[assRole] || ASSESS_ROLE_NOTES.other;
+    const today   = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+    const line = (n=64) => '─'.repeat(n);
+    const pad  = (s, w) => s.slice(0,w).padEnd(w);
+
+    let txt = `PERSONALIZED PETs LEARNING PATH\n`;
+    txt += `Privacy Enhancing Technologies in Education — Interactive Guide\n`;
+    txt += `Future of Privacy Forum  ·  fpf.org\n`;
+    txt += `Generated: ${today}\n\n`;
+    txt += `${'='.repeat(64)}\n`;
+    txt += `YOUR PROFILE\n`;
+    txt += `${'='.repeat(64)}\n\n`;
+    txt += `Role: ${roleObj.label}\n\n`;
+
+    txt += `${'='.repeat(64)}\n`;
+    txt += `KNOWLEDGE ASSESSMENT SUMMARY\n`;
+    txt += `${'='.repeat(64)}\n\n`;
+    txt += `${ pad('Module', 38) }  ${ pad('Score',6) }  Level\n`;
+    txt += `${line()}\n`;
+    for (const mod of quiz) {
+      const s  = scores[mod.key] ?? 0;
+      const lv = assLevelInfo(s);
+      txt += `${pad(mod.label, 38)}  ${pad(s+'/2', 6)}  ${lv.icon} ${lv.label}\n`;
+    }
+    txt += `\n`;
+
+    txt += `${'='.repeat(64)}\n`;
+    txt += `RECOMMENDED LEARNING PATH\n`;
+    txt += `${'='.repeat(64)}\n\n`;
+    txt += `Sorted by knowledge gaps first, then by relevance to your role.\n\n`;
+
+    const tiers = [
+      { items: path.filter(m => m.score === 0), title: 'PRIORITY 1 — FILL KNOWLEDGE GAPS (0/2)' },
+      { items: path.filter(m => m.score === 1), title: 'PRIORITY 2 — BUILD ON PARTIAL KNOWLEDGE (1/2)' },
+      { items: path.filter(m => m.score === 2), title: 'PRIORITY 3 — ADVANCED DEPTH (2/2)' },
+    ];
+    let rank = 0;
+    for (const tier of tiers) {
+      if (!tier.items.length) continue;
+      txt += `${tier.title}\n${line()}\n\n`;
+      for (const m of tier.items) {
+        rank++;
+        const lv   = assLevelInfo(m.score);
+        const note = roleNotes[m.key] || '';
+        txt += `#${rank}. ${ASSESS_MOD_LABELS[m.key]}\n`;
+        if (note) txt += `    Why it matters for your role:\n    ${note}\n`;
+        txt += `    Recommended focus: ${lv.action}\n\n`;
+      }
+    }
+
+    txt += `${'='.repeat(64)}\n`;
+    txt += `HOW TO USE THIS GUIDE\n`;
+    txt += `${'='.repeat(64)}\n\n`;
+    txt += `Return to the interactive guide (bookmark your browser tab).\n\n`;
+    txt += `Each module contains:\n`;
+    txt += `  • An interactive simulation to explore the concept\n`;
+    txt += `  • Notes  — technical and operational implementation context\n`;
+    txt += `  • Resources — curated external reading list\n`;
+    txt += `  • See also — related techniques to compare side by side\n\n`;
+    txt += `Feedback: https://forms.gle/PCKKiU7uh9BL2Pca8\n`;
+
+    const blob = new Blob([txt], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a2   = document.createElement('a');
+    a2.href     = url;
+    a2.download = `PETs-LearningPath-${today.replace(/[, ]+/g,'-')}.txt`;
+    document.body.appendChild(a2);
+    a2.click();
+    document.body.removeChild(a2);
+    URL.revokeObjectURL(url);
+  };
+
+  assRender(); // initial render (entry state)
 }
 
 const modules = {

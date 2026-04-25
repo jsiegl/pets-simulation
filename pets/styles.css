@@ -214,7 +214,7 @@ header p {
 
 /* Module navigation — collapsible left sidebar */
 nav {
-  width: 210px;
+  width: 240px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

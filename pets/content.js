@@ -273,6 +273,232 @@ const CONTENT = {
       ],
     },
 
+    // ── Personalized learning path assessment ─────────────────────────────────
+    //
+    // Shown below the "New to PETs?" block for users with some background.
+    // Step 1: role selection. Step 2: 2 questions × 8 modules. Step 3: results + download.
+    assessment: {
+      heading:    'Find your learning path',
+      subheading: 'Have some PETs background, or not sure where to focus?',
+      intro:      'Select your role and answer two quick questions per module. The tool will score your knowledge inventory and generate a personalized reading guide — with resources ranked for your context.',
+      cta:        'Start assessment →',
+      restartLabel: '↺ Retake assessment',
+      downloadLabel: '⬇ Download learning path (.txt)',
+
+      roles: [
+        { key: 'sea',        icon: '🏛',  label: 'SEA / SLDS Staff',        desc: 'State education agency or longitudinal data system staff who manage, share, or govern student data' },
+        { key: 'researcher', icon: '🔬',  label: 'Researcher / Academic',   desc: 'Academic, applied researcher, or program evaluator using or requesting education data for studies' },
+        { key: 'edtech',     icon: '💻',  label: 'EdTech Company / Vendor', desc: 'Technology provider building or operating products that process student or education data' },
+        { key: 'policy',     icon: '📋',  label: 'Policy or Legal Staff',   desc: 'Policy analysts, legal counsel, or legislative staff working on education data law and governance' },
+        { key: 'other',      icon: '◎',   label: 'Other / Not sure',        desc: 'Your role doesn\'t fit a category above, or you\'re exploring independently' },
+      ],
+      rolesNote: 'Don\'t see your role? Select "Other" — the path will be based on quiz results only. <a href="https://forms.gle/PCKKiU7uh9BL2Pca8" target="_blank" rel="noopener" style="color:var(--blue)">Suggest a missing role →</a>',
+
+      // 8 modules × 2 questions each
+      quizModules: [
+        {
+          key: 'dp', label: 'Differential Privacy',
+          questions: [
+            {
+              q: 'What does the privacy parameter ε (epsilon) control in differential privacy?',
+              options: [
+                'The number of records included in each query',
+                'The tradeoff between privacy protection and accuracy of results',
+                'The encryption key length used to protect query outputs',
+                'The number of analysts authorized to submit queries',
+              ],
+              correct: 1,
+            },
+            {
+              q: 'An SEA publishes proficiency rates by grade and demographic subgroup. Why is differential privacy appropriate?',
+              options: [
+                'It encrypts individual student records so they cannot be read without a key',
+                'It replaces real students with statistically equivalent synthetic records',
+                'It adds calibrated noise to published counts so no individual can be inferred from the result',
+                'It removes all small demographic subgroups from the published report',
+              ],
+              correct: 2,
+            },
+          ],
+        },
+        {
+          key: 'pprl', label: 'Privacy-Preserving Record Linkage',
+          questions: [
+            {
+              q: 'In PPRL, what do agencies exchange during the record-matching process?',
+              options: [
+                'Full student names and dates of birth via an encrypted secure channel',
+                'Cryptographic encodings of identifiers — not the identifiers themselves',
+                'Shared pseudonymous student IDs assigned by a neutral third party',
+                'Aggregate statistics sufficient to allow approximate record matching',
+              ],
+              correct: 1,
+            },
+            {
+              q: 'Which situation is a poor fit for PPRL?',
+              options: [
+                'Linking K–12 enrollment to postsecondary records to track long-term student outcomes',
+                'Matching student records across state lines without sharing raw PII',
+                'Real-time record lookups at the point of enrollment or service delivery',
+                'Cross-dataset linkage when neither agency holds a shared direct student identifier',
+              ],
+              correct: 2,
+            },
+          ],
+        },
+        {
+          key: 'mpc', label: 'Secure Multi-Party Computation',
+          questions: [
+            {
+              q: 'In MPC, what does each party learn at the end of the protocol?',
+              options: [
+                'The private input values of all other participating parties',
+                'Only the agreed-upon computed result — nothing about the other parties\' inputs',
+                'An encrypted copy of all inputs combined into a single dataset',
+                'A breakdown of each party\'s proportional contribution to the result',
+              ],
+              correct: 1,
+            },
+            {
+              q: 'Three districts want a joint average graduation rate with no district revealing its individual data. Which MPC property makes this possible?',
+              options: [
+                'Each district sends its data to a neutral trusted server for aggregation',
+                'Inputs are split into random "shares" that reveal nothing alone; the result emerges only when all shares are combined',
+                'Each district trains a local model and shares a compressed gradient update',
+                'The computation runs inside a secure hardware enclave owned by a neutral party',
+              ],
+              correct: 1,
+            },
+          ],
+        },
+        {
+          key: 'fl', label: 'Federated Learning',
+          questions: [
+            {
+              q: 'In federated learning, what do institutions send to the central coordinator?',
+              options: [
+                'An encrypted copy of their full student dataset for the training round',
+                'Compressed summary statistics averaged across their student records',
+                'Model gradient updates — mathematical adjustments to improve a shared model',
+                'Anonymized subsets of training data selected to represent their population',
+              ],
+              correct: 2,
+            },
+            {
+              q: 'Without DP-SGD or similar protections, what is the key privacy risk in federated learning?',
+              options: [
+                'The central coordinator can decrypt institution datasets during training',
+                'Gradient updates can be mathematically inverted to approximately reconstruct individual training records',
+                'Participating institutions can identify each other\'s data by comparing gradient updates',
+                'The final global model memorizes the largest institution\'s dataset disproportionately',
+              ],
+              correct: 1,
+            },
+          ],
+        },
+        {
+          key: 'synth', label: 'Synthetic Data',
+          questions: [
+            {
+              q: 'What does DP-trained synthetic data protect against that standard synthesis does not?',
+              options: [
+                'Re-identification through correlating multiple separately released synthetic datasets',
+                'Membership inference attacks testing whether specific real records influenced the output',
+                'Memorization of individual records — especially statistical outliers — during the generation process',
+                'Overfitting to majority-class patterns that causes minority groups to be under-represented',
+              ],
+              correct: 2,
+            },
+            {
+              q: 'Which scenario best illustrates the "high fidelity ≠ low privacy risk" problem?',
+              options: [
+                'A synthetic dataset with slightly different average values than the original real data',
+                'A generator that accurately reproduces rare-subgroup statistics because it memorized those specific records',
+                'A synthetic dataset that cannot be used for regression analysis due to noise in continuous variables',
+                'A generator that is too slow to process large state-level datasets',
+              ],
+              correct: 1,
+            },
+          ],
+        },
+        {
+          key: 'tee', label: 'Trusted Execution Environments',
+          questions: [
+            {
+              q: 'What is the defining privacy property of a Trusted Execution Environment?',
+              options: [
+                'Data is encrypted during transmission between the sending agency and the enclave server',
+                'Only users with multi-factor authentication can access records inside the environment',
+                'Data remains encrypted while being processed — even the cloud provider or system admin cannot read it',
+                'Query results are aggregated before they leave the enclave, preventing individual-level inference',
+              ],
+              correct: 2,
+            },
+            {
+              q: 'What does cryptographic attestation prove in a TEE-based system?',
+              options: [
+                'That the requester holds a valid data use agreement and FERPA authorization',
+                'That the hardware is genuine and the specific code loaded into the enclave is exactly what was expected',
+                'That data has not been modified during transmission into the secure enclave',
+                'That computation results have been independently audited by a neutral third party',
+              ],
+              correct: 1,
+            },
+          ],
+        },
+        {
+          key: 'he', label: 'Homomorphic Encryption',
+          questions: [
+            {
+              q: 'What distinguishes homomorphic encryption from standard encryption?',
+              options: [
+                'It decrypts faster than standard algorithms, enabling real-time queries',
+                'It allows arithmetic operations on encrypted data without decrypting it first',
+                'It can encrypt arbitrarily large datasets without performance degradation',
+                'It uses quantum-resistant primitives unavailable in standard schemes',
+              ],
+              correct: 1,
+            },
+            {
+              q: 'What is the primary practical limitation of fully homomorphic encryption (FHE) today?',
+              options: [
+                'It provides weaker security guarantees than standard encryption',
+                'It requires sharing the decryption key with the party performing the computation',
+                'It is 1,000–1,000,000× slower than plaintext computation, making it impractical for most real-time use',
+                'It only supports a limited set of specific algorithms',
+              ],
+              correct: 2,
+            },
+          ],
+        },
+        {
+          key: 'tok', label: 'Tokenization',
+          questions: [
+            {
+              q: 'What is the primary function of the token vault?',
+              options: [
+                'It generates cryptographically random tokens that cannot be reversed by anyone',
+                'It stores the secure mapping between tokens and original PII, enabling authorized re-identification',
+                'It validates that tokens conform to required format specifications before being issued',
+                'It encrypts tokenized data in transit between the originating agency and downstream partners',
+              ],
+              correct: 1,
+            },
+            {
+              q: 'Why do cross-agency tokenization deployments require governance agreements about name formatting?',
+              options: [
+                'FERPA requires standardized name and identifier formats for all shared education records',
+                'Tokens are generated from the exact input string — different formatting produces different tokens for the same person, breaking the linkage',
+                'Different vault systems use incompatible tokenization algorithms that require format alignment',
+                'Format inconsistencies violate the data quality standards required for federal education reporting',
+              ],
+              correct: 1,
+            },
+          ],
+        },
+      ], // end quizModules
+    }, // end assessment
+
     // Module list drives the "Explore the modules" chip row.
     // level: 'Beginner' | 'Intermediate' | 'Advanced'
     moduleList: [
@@ -295,7 +521,7 @@ const CONTENT = {
   // 'global' and 'local' keys hold the text for each tab independently.
   // Shared fields (tag, title, definition, notes, resources) appear above the tabs.
   dp: {
-    tag:   'Module 1 of 8',
+    tag:   'Module 1 of 9',
     title: 'Differential Privacy',
 
     // Shared intro shown above the Global / Local tabs
@@ -307,7 +533,7 @@ const CONTENT = {
       'exact counts are legally required — e.g., mandatory federal reporting with statutory precision requirements that leave no room for noise-induced rounding',
     ],
 
-    notes: '<strong>Global DP — implementation simplifications to be aware of:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Sensitivity is fixed at 1.</strong> The Laplace noise scale is <em>b = Δf / ε</em>, where Δf is the global sensitivity of the query. This simulation assumes Δf = 1 (a single-person count query). In practice, sensitivity must be calculated for each query type — an incorrect value directly undermines the privacy guarantee without any visible warning.</li><li><strong>Zero-clipping introduces upward bias for small groups.</strong> Noisy counts below zero are truncated to 0. This post-processing step is not itself a privacy violation, but it biases reported counts upward for small subgroups — a known pitfall that disproportionately affects small demographic cells and can distort equity analyses.</li><li><strong>Each query run spends ε — and this simulation tracks it.</strong> Under sequential composition, running the same query k times costs k × ε total privacy budget. The budget meter above the Run Query button shows accumulated spend against a configurable cap (default 5.0 ε). Once the cap is reached the button locks and further queries are refused until you click ↺ Reset. You can raise or lower the cap using the budget input to explore the tradeoff between how many queries an analyst can run and how much total privacy leakage is permitted. What this simulation does not model: real deployments track budget across sessions and across multiple analysts querying the same dataset — a single analyst resetting their own meter does not reset the institutional budget. Production systems use a privacy accountant (e.g. the OpenDP or Google DP libraries) to enforce a shared ceiling that survives restarts.</li><li><strong>The simulation starts with no budget spent.</strong> On first load both the blue "true" bars and the mint "noisy" bars are drawn at the same height — because the noisy values are initialised to the true counts before any query is run. The two bar series only visibly diverge after you click Run Query and Laplace noise is sampled. This makes the link between budget expenditure and data distortion explicit from the first interaction.</li><li><strong>Parallel composition: disjoint subsets cost only ε once.</strong> When queries operate on non-overlapping subgroups (e.g., separately querying Grade 3, Grade 4, and Grade 5 counts where each student appears in exactly one group), the total privacy cost is just ε — not k × ε. This is the parallel composition theorem. It is why publishing a full grade-level breakdown is cheaper than running the same query repeatedly on the whole dataset. Production DP systems track composition type and credit the analyst accordingly.</li><li><strong>Pure ε-DP vs. approximate (ε, δ)-DP — when practitioners use each.</strong> This simulation demonstrates <em>pure</em> ε-DP with the Laplace mechanism, which provides the strongest guarantee: every output event is bounded in probability by e<sup>ε</sup> relative to neighboring datasets. In practice, many deployed systems use <em>approximate</em> (ε, δ)-DP with the Gaussian mechanism instead. The δ parameter allows a small, explicitly bounded probability (e.g. δ = 10<sup>−8</sup>) that the strict ε bound is exceeded. This is acceptable when δ is much smaller than 1/n (one-in-a-million for a million-record dataset). The Gaussian mechanism typically requires less noise than Laplace for the same (ε, δ) guarantee, making it preferred for high-dimensional data and ML training (DP-SGD). When evaluating a DP system, always check whether the guarantee is pure ε or (ε, δ) — a system advertising a small ε may carry a non-negligible δ that weakens the stated guarantee.</li></ul>',
+    notes: '<strong>Global DP — implementation simplifications to be aware of:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Sensitivity is fixed at 1.</strong> The Laplace noise scale is <em>b = Δf / ε</em>, where Δf is the global sensitivity of the query. This simulation assumes Δf = 1 (a single-person count query). In practice, sensitivity must be calculated for each query type — an incorrect value directly undermines the privacy guarantee without any visible warning.</li><li><strong>Zero-clipping introduces upward bias for small groups.</strong> Noisy counts below zero are truncated to 0. This post-processing step is not itself a privacy violation, but it biases reported counts upward for small subgroups — a known pitfall that disproportionately affects small demographic cells and can distort equity analyses.</li><li><strong>Each query run spends ε — and this simulation tracks it.</strong> Under sequential composition, running the same query k times costs k × ε total privacy budget. The budget meter above the Run Query button shows accumulated spend against a configurable cap (default 5.0 ε). Once the cap is reached the button locks and further queries are refused until you click ↺ Reset. You can raise or lower the cap using the budget input to explore the tradeoff between how many queries an analyst can run and how much total privacy leakage is permitted. What this simulation does not model: real deployments track budget across sessions and across multiple analysts querying the same dataset — a single analyst resetting their own meter does not reset the institutional budget. Production systems use a privacy accountant (e.g. the OpenDP or Google DP libraries) to enforce a shared ceiling that survives restarts.</li><li><strong>The simulation starts with no budget spent.</strong> On first load both the blue "true" bars and the mint "noisy" bars are drawn at the same height — because the noisy values are initialised to the true counts before any query is run. The two bar series only visibly diverge after you click Run Query and Laplace noise is sampled. This makes the link between budget expenditure and data distortion explicit from the first interaction.</li><li><strong>Parallel composition: disjoint subsets cost only ε once.</strong> When queries operate on non-overlapping subgroups (e.g., separately querying Grade 3, Grade 4, and Grade 5 counts where each student appears in exactly one group), the total privacy cost is just ε — not k × ε. This is the parallel composition theorem. It is why publishing a full grade-level breakdown is cheaper than running the same query repeatedly on the whole dataset. Production DP systems track composition type and credit the analyst accordingly.</li><li><strong>Pure ε-DP vs. approximate (ε, δ)-DP — when practitioners use each.</strong> This simulation demonstrates <em>pure</em> ε-DP with the Laplace mechanism, which provides the strongest guarantee: every output event is bounded in probability by e<sup>ε</sup> relative to neighboring datasets. In practice, many deployed systems use <em>approximate</em> (ε, δ)-DP with the Gaussian mechanism instead. The δ parameter allows a small, explicitly bounded probability (e.g. δ = 10<sup>−8</sup>) that the strict ε bound is exceeded. This is acceptable when δ is much smaller than 1/n (one-in-a-million for a million-record dataset). The Gaussian mechanism typically requires less noise than Laplace for the same (ε, δ) guarantee, making it preferred for high-dimensional data and ML training (DP-SGD). When evaluating a DP system, always check whether the guarantee is pure ε or (ε, δ) — a system advertising a small ε may carry a non-negligible δ that weakens the stated guarantee.</li><li><strong>FERPA / Legal relevance.</strong> DP-protected aggregate outputs — counts, rates, and averages — contain no individually identifiable student data, and a properly documented DP release may satisfy FERPA\'s de-identification determination without requiring individual consent or a FERPA exception. NCES statistical standards recognize differential privacy as a valid statistical disclosure limitation method; agencies should document the ε value, sensitivity assumptions, and composition accounting as part of the formal de-identification record.</li></ul>',
 
     resources: [
       // Foundational federal standard — evaluating DP claims, the DP pyramid, privacy hazards
@@ -320,6 +546,14 @@ const CONTENT = {
       ['Implementing Differential Privacy: Seven Lessons From the 2020 US Census', 'https://hdsr.mitpress.mit.edu/pub/dgg03vo6'],
       // Non-technical primer — best intro for policy/legal audiences
       ['Differential Privacy: A Primer for a Non-Technical Audience — Wood et al.', 'https://privacytools.seas.harvard.edu/files/privacytools/files/pedagogical-document-dp_new.pdf'],
+    ],
+
+    related: [
+      {
+        key:   'synth',
+        label: 'Synthetic Data',
+        note:  'Both control what statistical information leaves a dataset. DP adds calibrated noise to aggregate query results; synthetic data generates a shareable, record-like file. Choose DP when analysts need to query real data interactively with a formal ε guarantee; choose synthetic data when researchers need a downloadable, record-level dataset they can run code against.',
+      },
     ],
 
     // ── Global DP tab ────────────────────────────────────────────────────────
@@ -386,7 +620,7 @@ const CONTENT = {
 
   // ── Module 2: Privacy-Preserving Record Linkage ────────────────────────────
   pprl: {
-    tag:        'Module 2 of 8',
+    tag:        'Module 2 of 9',
     title:      'Privacy-Preserving Record Linkage',
     definition: 'PPRL lets two agencies find the same individuals across datasets by comparing <em>encoded identifiers</em> (such as cryptographic hash encodings) — without either party revealing the underlying names, dates of birth, or other PII to the other.',
     useCase:    'An SLDS links K–12 enrollment records to postsecondary enrollment and workforce data to track long-term outcomes, without a shared student ID and without exchanging personally identifiable information.',
@@ -406,7 +640,7 @@ const CONTENT = {
       ['Output type',               'Linked record pairs — no PII crosses boundary', 'val-low'],
     ],
 
-    notes: '<strong>How the matching works in this simulation:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Matching is driven by bigram similarity, not raw identifiers.</strong> Each record is compared using the Sørensen–Dice coefficient over character bigrams (overlapping two-character pairs from the normalised name and date of birth). Two records link if their similarity score meets or exceeds 60%. This is mathematically equivalent to what Bloom filter PPRL computes: the bit-array Dice distance approximates bigram Dice similarity over the same n-gram set.</li><li><strong>Abbreviated names match at lower scores than exact pairs.</strong> "J. Okafor / 2003-08-21" and "James Okafor / 2003-08-21" share most of their DOB bigrams and several name bigrams — enough to exceed the threshold even though the names are not identical. This is the key property of Bloom filter PPRL: it tolerates the real-world variation in how agencies record the same person\'s name.</li><li><strong>The similarity score is shown on each matched row.</strong> Scores below 100% reflect name abbreviation or variation, not a weaker privacy guarantee — the privacy property depends on the encoding, not the match score.</li></ul><strong>What is simplified relative to production PPRL:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real Bloom filters use bit arrays.</strong> In production (e.g. the Schnell et al. scheme), each bigram is hashed into multiple bit positions in a fixed-length bit vector. The hex strings shown are a visual proxy — they capture the deterministic encoding property but not the bit-array structure or the hardening steps (e.g. record-level salting, XOR folding) that prevent hash reversal.</li><li><strong>Threshold tuning is a privacy–utility tradeoff.</strong> A lower threshold catches more true matches but risks false positives (linking different people). A higher threshold reduces false positives but misses more true matches. In a real deployment, threshold selection involves iterative testing against ground-truth linked records and is a key governance decision.</li><li><strong>Bloom filters are not the current state of the art.</strong> Early PPRL implementations used Bloom filters; modern systems use more attack-resistant encodings (CLK, HMAC-based schemes, and others) that are less susceptible to frequency and cryptanalytic attacks. When evaluating vendors, ask about their encoding scheme and known vulnerabilities.</li></ul>',
+    notes: '<strong>How the matching works in this simulation:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Matching is driven by bigram similarity, not raw identifiers.</strong> Each record is compared using the Sørensen–Dice coefficient over character bigrams (overlapping two-character pairs from the normalised name and date of birth). Two records link if their similarity score meets or exceeds 60%. This is mathematically equivalent to what Bloom filter PPRL computes: the bit-array Dice distance approximates bigram Dice similarity over the same n-gram set.</li><li><strong>Abbreviated names match at lower scores than exact pairs.</strong> "J. Okafor / 2003-08-21" and "James Okafor / 2003-08-21" share most of their DOB bigrams and several name bigrams — enough to exceed the threshold even though the names are not identical. This is the key property of Bloom filter PPRL: it tolerates the real-world variation in how agencies record the same person\'s name.</li><li><strong>The similarity score is shown on each matched row.</strong> Scores below 100% reflect name abbreviation or variation, not a weaker privacy guarantee — the privacy property depends on the encoding, not the match score.</li></ul><strong>What is simplified relative to production PPRL:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real Bloom filters use bit arrays.</strong> In production (e.g. the Schnell et al. scheme), each bigram is hashed into multiple bit positions in a fixed-length bit vector. The hex strings shown are a visual proxy — they capture the deterministic encoding property but not the bit-array structure or the hardening steps (e.g. record-level salting, XOR folding) that prevent hash reversal.</li><li><strong>Threshold tuning is a privacy–utility tradeoff.</strong> A lower threshold catches more true matches but risks false positives (linking different people). A higher threshold reduces false positives but misses more true matches. In a real deployment, threshold selection involves iterative testing against ground-truth linked records and is a key governance decision.</li><li><strong>Bloom filters are not the current state of the art.</strong> Early PPRL implementations used Bloom filters; modern systems use more attack-resistant encodings (CLK, HMAC-based schemes, and others) that are less susceptible to frequency and cryptanalytic attacks. When evaluating vendors, ask about their encoding scheme and known vulnerabilities.</li><li><strong>FERPA / Legal relevance.</strong> Encoding identifiers before exchange does not eliminate FERPA obligations — sharing encoded records with a matching partner and receiving a linked output still constitutes a disclosure of education records, because the linkage result identifies which students appear in both datasets. Agencies conducting PPRL must establish a valid FERPA legal basis (school official exception, studies exception, or written consent) and execute a governing data-use agreement before the protocol begins, regardless of what each party can technically observe during matching.</li></ul>',
 
     resources: [
       // NIH/NIA strategy and recommendations report — practical PPRL for government agencies
@@ -418,11 +652,19 @@ const CONTENT = {
       // Practical PPRL intro from Thoughtworks Technology Radar
       ['Privacy-Preserving Record Linkage Using Bloom Filter — Thoughtworks Technology Radar', 'https://www.thoughtworks.com/radar/techniques/privacy-preserving-record-linkage-pprl-using-bloom-filter'],
     ],
+
+    related: [
+      {
+        key:   'tok',
+        label: 'Tokenization',
+        note:  'Both enable cross-agency linkage without exchanging raw PII, but with very different threat models. PPRL uses one-way encodings — neither agency can reverse the other\'s identifiers, and there is no vault to breach. Tokenization requires a trusted vault that retains full re-identification capability. Choose PPRL when you want linkage without any party holding re-identification power; choose tokenization when authorized re-identification is an ongoing operational requirement.',
+      },
+    ],
   },
 
   // ── Module 3: Secure Multi-Party Computation ──────────────────────────────
   mpc: {
-    tag:        'Module 3 of 8',
+    tag:        'Module 3 of 9',
     title:      'Secure Multi-Party Computation',
     definition: 'MPC allows multiple parties to jointly compute a result over their combined data — such as a district average or a merged statistic — without any party revealing their private input to the others.',
     useCase:    'Three school districts want to compute a regional graduation rate to benchmark against state targets, without sharing their individual student outcome data.',
@@ -452,7 +694,7 @@ const CONTENT = {
       ['Output type',               'Aggregate only (result of agreed computation)', 'val-low'],
     ],
 
-    notes: '<strong>What this simulation accurately demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Additive secret sharing is real.</strong> Each school score is split into three shares that sum exactly to the original value (a + b + c = score). The district average is derived from these shares — not from the raw scores directly.</li><li><strong>Partial sums are meaningless alone.</strong> Each party only ever sees one share per school. Their partial sum is a random-looking integer that reveals nothing about any individual school\'s score. Only when all three partial sums are combined does the true aggregate emerge.</li><li><strong>Negative shares are valid.</strong> When you see a dashed chip with a negative value, that is correct and intentional — additive shares range freely over the integers. A negative share is just as valid as a positive one; what matters is that all three sum to the original score.</li></ul><strong>What is deliberately simplified:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>The "secure" part is not enforced.</strong> In a real MPC protocol (e.g. SPDZ, GMW), parties cannot deviate from the protocol even if malicious — cryptographic commitments and zero-knowledge proofs enforce honest behaviour. Here, the computation runs in plain JavaScript with no cryptographic enforcement. The simulation shows the correct <em>information flow</em> of additive secret sharing, but not the cryptographic mechanisms that make it tamper-proof.</li><li><strong>Communication rounds are collapsed.</strong> A real 3-party protocol requires multiple rounds of authenticated message exchange. The animation compresses this into a single step for clarity.</li></ul>',
+    notes: '<strong>What this simulation accurately demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Additive secret sharing is real.</strong> Each school score is split into three shares that sum exactly to the original value (a + b + c = score). The district average is derived from these shares — not from the raw scores directly.</li><li><strong>Partial sums are meaningless alone.</strong> Each party only ever sees one share per school. Their partial sum is a random-looking integer that reveals nothing about any individual school\'s score. Only when all three partial sums are combined does the true aggregate emerge.</li><li><strong>Negative shares are valid.</strong> When you see a dashed chip with a negative value, that is correct and intentional — additive shares range freely over the integers. A negative share is just as valid as a positive one; what matters is that all three sum to the original score.</li></ul><strong>What is deliberately simplified:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>The "secure" part is not enforced.</strong> In a real MPC protocol (e.g. SPDZ, GMW), parties cannot deviate from the protocol even if malicious — cryptographic commitments and zero-knowledge proofs enforce honest behaviour. Here, the computation runs in plain JavaScript with no cryptographic enforcement. The simulation shows the correct <em>information flow</em> of additive secret sharing, but not the cryptographic mechanisms that make it tamper-proof.</li><li><strong>Communication rounds are collapsed.</strong> A real 3-party protocol requires multiple rounds of authenticated message exchange. The animation compresses this into a single step for clarity.</li><li><strong>FERPA / Legal relevance.</strong> When MPC produces only a final aggregate — such as a regional graduation rate — and no individual records or identifiable shares cross institutional boundaries, the protocol may avoid triggering a FERPA disclosure to the coordinator entirely. If a third-party coordinator is involved, agencies should evaluate whether the coordinator\'s role qualifies under FERPA\'s school official exception and document that relationship in a data service agreement, even though the coordinator receives only a computed result rather than underlying records.</li></ul>',
 
     resources: [
       // Free textbook — the definitive practical introduction to MPC, widely used in courses
@@ -462,11 +704,19 @@ const CONTENT = {
       // Statistics Canada introduction — government-framed MPC explainer with use cases
       ['Introduction to Privacy-Enhancing Cryptographic Techniques: Secure MPC — Statistics Canada', 'https://www.statcan.gc.ca/en/data-science/network/multiparty-computation'],
     ],
+
+    related: [
+      {
+        key:   'fl',
+        label: 'Federated Learning',
+        note:  'Both compute across distributed datasets without centralizing raw records. MPC is general-purpose — it can compute any agreed function with cryptographic exactness, but is computationally expensive and slow. FL is specialized for training ML models and is more practical at scale. In practice, FL often uses MPC-based secure aggregation internally to prevent the coordinator from seeing individual institution gradient updates.',
+      },
+    ],
   },
 
   // ── Module 4: Federated Learning ──────────────────────────────────────────
   fl: {
-    tag:        'Module 4 of 8',
+    tag:        'Module 4 of 9',
     title:      'Federated Learning',
     definition: 'Federated learning trains a shared machine learning model across multiple institutions, each keeping their data local. Only model <em>updates</em> (gradients) — not raw records — are shared with a central coordinator.',
     useCase:    'Multiple states train an early-warning indicator model for student dropout risk. Each state\'s student data never leaves its servers; only statistical model updates are pooled to improve prediction for all.',
@@ -496,6 +746,7 @@ const CONTENT = {
     ],
 
     notes: `<ul>
+      <li><strong>Federated learning is data minimization, not anonymization.</strong> FL reduces what data leaves each institution — raw records stay local — but it does not anonymize or de-identify that data. Gradient updates can leak individual-level information (see gradient inversion below), and the global model itself carries statistical fingerprints of the training set. FL is best understood as a data-minimization architecture that reduces exposure compared to centralizing raw records. It is not a substitute for anonymization or de-identification, and is most often deployed alongside other PETs — particularly DP — to achieve stronger privacy guarantees.</li>
       <li><strong>Gradient inversion — the hidden privacy risk.</strong> Sharing gradient updates (Δw) instead of raw data is not the same as sharing nothing. In 2019, Zhu et al. demonstrated that gradients from a single training step can be inverted to approximately reconstruct the training images pixel-by-pixel (<em>"Deep Leakage from Gradients," NeurIPS 2019</em>). For tabular data like student records, similar reconstruction attacks have been shown to recover individual row values from gradient updates — especially when batch sizes are small (one record = one gradient update).</li>
       <li><strong>DP-SGD is the mitigation.</strong> Differentially Private Stochastic Gradient Descent (DP-SGD, Abadi et al. 2016) clips each per-sample gradient to a maximum norm, then adds calibrated Gaussian noise before the update is sent to the coordinator. This provides a formal (ε, δ)-DP guarantee on the gradient, making reconstruction attacks provably difficult. The cost is reduced model accuracy — the same privacy-utility tradeoff as global DP, but at the gradient level.</li>
       <li><strong>The simulation does not show gradient inversion or DP-SGD.</strong> The "Δw" packets in the animation represent conceptual gradient updates. In a real deployment, each Δw would either be a raw gradient (vulnerable to reconstruction) or a DP-SGD-noised gradient. Without DP-SGD, federated learning offers weaker privacy guarantees than the architecture diagram suggests.</li>
@@ -513,11 +764,19 @@ const CONTENT = {
       // OpenMined PySyft — privacy-preserving ML library including FL
       ['PySyft / OpenMined: Privacy-Preserving ML Library', 'https://openmined.org'],
     ],
+
+    related: [
+      {
+        key:   'mpc',
+        label: 'Secure Multi-Party Computation',
+        note:  'MPC is the more general primitive — it can compute any agreed function across parties, not just train ML models. FL uses MPC-based secure aggregation as an optional layer to prevent the coordinator from seeing individual institution gradient updates. If your use case is not ML model training, start with MPC. If you need distributed ML with practical scalability, FL (with DP-SGD and secure aggregation) is the right path.',
+      },
+    ],
   },
 
   // ── Module 5: Synthetic Data Generation ───────────────────────────────────
   synth: {
-    tag:        'Module 5 of 8',
+    tag:        'Module 5 of 9',
     title:      'Synthetic Data Generation',
     definition: 'Synthetic data is artificially generated to match the <em>statistical properties</em> of a real dataset — distributions, correlations, and patterns — while containing no records from real individuals, substantially reducing re-identification risk.',
     useCase:    'A state education agency releases a synthetic version of its longitudinal student dataset so researchers can build and test analytic tools without accessing any real student records.',
@@ -552,6 +811,14 @@ const CONTENT = {
       ['Understanding Synthetic Data — Urban Institute', 'https://www.urban.org/research/publication/understanding-synthetic-data'],
       ['Generating a Fully Synthetic Human Services Dataset — Urban Institute', 'https://www.urban.org/research/publication/generating-fully-synthetic-human-services-dataset'],
       ['Analyzing the Privacy and Utility Trade-off for Synthetic Datasets with Imbalanced Demographic Groups — Urban Institute', 'https://urban-institute.medium.com/analyzing-the-privacy-and-utility-tradeoff-for-synthetic-datasets-with-imbalanced-demographic-c8968cc5d0a1'],
+    ],
+
+    related: [
+      {
+        key:   'dp',
+        label: 'Differential Privacy',
+        note:  'DP protects aggregate query outputs with a formal, provable ε guarantee. Synthetic data releases a record-like file, but relies on generation quality unless DP-trained. For the strongest privacy assurance on released files, choose DP-trained synthesis — but expect reduced fidelity for small subgroups. For interactive analysis of real data, DP query mechanisms are the more appropriate tool.',
+      },
     ],
 
     // ── Statistical Equivalence panel — rows rendered in the toggle panel ──────
@@ -592,7 +859,7 @@ const CONTENT = {
 
   // ── Module 6: Trusted Execution Environments ──────────────────────────────
   tee: {
-    tag:        'Module 6 of 8',
+    tag:        'Module 6 of 9',
     title:      'Trusted Execution Environments',
     definition: 'A TEE (or "secure enclave") is a hardware-isolated computing zone where data is <em>encrypted even from the cloud provider or system administrator</em>. Code runs in the enclave, data enters encrypted, and only approved results leave.',
     useCase:    'A secure research platform (like SafeInsights) lets approved researchers run statistical analyses on sensitive student records stored in an enclave — without anyone, including the platform operator, being able to view the raw data.',
@@ -615,7 +882,7 @@ const CONTENT = {
       ['Output type',               'Any — aggregate or record-level, per query design', 'val-med'],
     ],
 
-    notes: '',
+    notes: '<ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>FERPA / Legal relevance.</strong> Placing education records inside a secure enclave does not create a FERPA safe harbor — agencies must still have a legal basis for disclosing records to the enclave platform operator (typically the school official or studies exception), documented in a data use agreement that specifies the operator\'s access controls and obligations. The enclave\'s hardware isolation satisfies the "reasonable methods" expectation for limiting unauthorized access, but it does not substitute for the legal authorization that FERPA requires before records leave the agency\'s direct control.</li></ul>',
 
     resources: [
       // FPF policy report — best resource for policy audience on TEEs and confidential computing
@@ -631,7 +898,7 @@ const CONTENT = {
 
   // ── Module 7: Homomorphic Encryption ──────────────────────────────────────
   he: {
-    tag:        'PET Module 7 of 8',
+    tag:        'PET Module 7 of 9',
     title:      'Homomorphic Encryption',
     definition: 'Homomorphic encryption (HE) allows a server to perform computations — additions, multiplications, and averages (and, with significant overhead, comparisons) — directly on <em>encrypted data</em>, returning an encrypted result. The server never sees the plaintext values at any point.',
     useCase:    'An SEA outsources analytics to a cloud vendor. Student records are encrypted before upload; the vendor computes aggregate statistics on ciphertext and returns encrypted results that only the SEA can decrypt — the vendor learns nothing about individual students.',
@@ -654,7 +921,7 @@ const CONTENT = {
       ['Output type',               'Encrypted result — decrypted only by key holder', 'val-low'],
     ],
 
-    notes: '<strong>Semantic security — what the simulation demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Same plaintext → different ciphertext each run (IND-CPA).</strong> Click "Encrypt &amp; Send", note the ciphertext strings, reset, and run again — the ciphertexts are completely different even though the underlying values (GPA, attendance, proficiency count) have not changed. This is the defining property of semantically secure encryption: an observer who sees two ciphertexts cannot determine whether they encrypt the same value or different values.</li><li><strong>The cloud vendor never sees the plaintext — and cannot infer it from the ciphertext.</strong> Because the ciphertext is indistinguishable from random, a vendor who receives it gains no information about the underlying value, even if they see multiple encryptions of the same record.</li></ul><strong>What is simplified relative to production HE:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real randomness comes from lattice noise, not JavaScript Math.random().</strong> Production HE schemes (BFV, CKKS, BGV) achieve probabilistic encryption by adding carefully structured noise drawn from a discrete Gaussian distribution over a polynomial ring. The noise is large enough to hide the plaintext from anyone without the secret key, but small enough that the homomorphic computation still produces the correct result after decryption.</li><li><strong>Homomorphic operations on ciphertext are not simulated.</strong> The "computing on ciphertext" step is animated but the computation is performed on the plaintext values directly. Real HE arithmetic (addition and multiplication of ciphertexts) is orders of magnitude slower than plaintext arithmetic and introduces a small amount of noise with each operation — which is why bootstrapping is required for deep computation circuits.</li><li><strong>Key management is not shown.</strong> In practice, the SEA generates a public/private key pair. The public key is used for encryption (by anyone); the private key — held only by the SEA — is required for decryption. The vendor never has access to the private key.</li></ul>',
+    notes: '<strong>Semantic security — what the simulation demonstrates:</strong><ul style="margin:8px 0 8px 0;padding-left:1.4em;line-height:1.9"><li><strong>Same plaintext → different ciphertext each run (IND-CPA).</strong> Click "Encrypt &amp; Send", note the ciphertext strings, reset, and run again — the ciphertexts are completely different even though the underlying values (GPA, attendance, proficiency count) have not changed. This is the defining property of semantically secure encryption: an observer who sees two ciphertexts cannot determine whether they encrypt the same value or different values.</li><li><strong>The cloud vendor never sees the plaintext — and cannot infer it from the ciphertext.</strong> Because the ciphertext is indistinguishable from random, a vendor who receives it gains no information about the underlying value, even if they see multiple encryptions of the same record.</li></ul><strong>What is simplified relative to production HE:</strong><ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>Real randomness comes from lattice noise, not JavaScript Math.random().</strong> Production HE schemes (BFV, CKKS, BGV) achieve probabilistic encryption by adding carefully structured noise drawn from a discrete Gaussian distribution over a polynomial ring. The noise is large enough to hide the plaintext from anyone without the secret key, but small enough that the homomorphic computation still produces the correct result after decryption.</li><li><strong>Homomorphic operations on ciphertext are not simulated.</strong> The "computing on ciphertext" step is animated but the computation is performed on the plaintext values directly. Real HE arithmetic (addition and multiplication of ciphertexts) is orders of magnitude slower than plaintext arithmetic and introduces a small amount of noise with each operation — which is why bootstrapping is required for deep computation circuits.</li><li><strong>Key management is not shown.</strong> In practice, the SEA generates a public/private key pair. The public key is used for encryption (by anyone); the private key — held only by the SEA — is required for decryption. The vendor never has access to the private key.</li><li><strong>FERPA / Legal relevance.</strong> A cloud vendor who processes only ciphertext and never holds the decryption key arguably has no meaningful access to education record content — which may simplify the FERPA authorization analysis compared to sharing plaintext records with the same vendor. Agencies should nonetheless execute a data service agreement treating the encrypted dataset as FERPA-covered, since the vendor possesses a derivative of protected records and must be contractually obligated to maintain encryption controls and prohibit decryption attempts for the duration of the engagement.</li></ul>',
 
     resources: [
       // Industry standardization body — overview of HE schemes and open-source libraries
@@ -670,7 +937,7 @@ const CONTENT = {
 
   // ── Module 8: Tokenization ─────────────────────────────────────────────────
   tok: {
-    tag:        'PET Module 8 of 8',
+    tag:        'PET Module 8 of 9',
     title:      'Tokenization',
     definition: 'Tokenization replaces sensitive identifiers — names, SSNs, student IDs — with opaque, consistent <em>pseudorandom tokens</em> stored in a secure vault. The same identifier always maps to the same token, enabling cross-system linkage without exposing the underlying PII. Only an authorized vault lookup can reverse a token.',
     useCase:    'A state replaces student SSNs and names with tokens before sharing data with postsecondary and workforce partners. Each partner works with tokens; only the state vault can re-link tokens to real identities for authorized purposes.',
@@ -693,7 +960,7 @@ const CONTENT = {
       ['Output type',               'Tokenized operational records (PII fields replaced)', 'val-med'],
     ],
 
-    notes: '',
+    notes: '<ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>FERPA / Legal relevance.</strong> Tokenized data shared with a partner still constitutes a FERPA-regulated disclosure — tokens are pseudonyms, not de-identified records, because the vault preserves full re-identification capability and no FERPA safe harbor applies. Agencies must establish a valid FERPA legal basis before transferring tokenized education records to any partner, and the governing data-use agreement should specify vault access controls and explicitly prohibit partners from using tokens to attempt reverse-linkage or re-identification.</li></ul>',
 
     resources: [
       // Cloud Security Alliance best practices guide for tokenization implementers
@@ -702,6 +969,14 @@ const CONTENT = {
       ['Guide to Protecting the Confidentiality of PII (NIST SP 800-122)', 'https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-122.pdf'],
       // NIST 800-175B — cryptographic mechanisms for federal government, including FPE
       ['Guideline for Using Cryptographic Standards in the Federal Government (NIST SP 800-175B Rev 1)', 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-175Br1.pdf'],
+    ],
+
+    related: [
+      {
+        key:   'pprl',
+        label: 'Privacy-Preserving Record Linkage',
+        note:  'PPRL is the alternative when you need cross-agency linkage but cannot or should not maintain a re-identification vault. PPRL encodes identifiers before exchange — the matching partner cannot reverse them, and there is no vault to breach. Choose tokenization when authorized re-identification is an ongoing operational requirement; choose PPRL when you want linkage capability without any party holding re-identification power.',
+      },
     ],
   },
 
