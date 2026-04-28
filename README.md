@@ -1,6 +1,7 @@
 # Privacy Enhancing Technologies — Interactive Guide
 
 A single-page web application providing interactive simulations and explanations of Privacy Enhancing Technologies (PETs), targeted at state education agency data analysts, researchers, and policy staff.
+Released under Creative Commons CC BY-SA.
 
 **Version:** v2026-04-14
 
