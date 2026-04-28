@@ -1916,7 +1916,8 @@ function renderTEE() {
   </div>
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   window.teeRun = async function() {
     const myEpoch = renderEpoch;  // capture epoch — bail if module is switched mid-animation
@@ -2130,7 +2131,8 @@ function renderHE() {
   </div>
   ${tradeoffs(c.tradeoffs)}
   ${notes(c.notes)}
-  ${resources(c.resources)}`;
+  ${resources(c.resources)}
+  ${relatedModules(c.related)}`;
 
   heUpdateScheme(); // populate scheme bar and step-2 text with default (average)
 
@@ -2613,7 +2615,8 @@ function renderTrad() {
     <button class="btn btn-outline" id="ttab-perturbation" onclick="tradNav('perturbation')">Perturbation</button>
     <button class="btn btn-outline" id="ttab-kanon" onclick="tradNav('kanon')">k-Anonymity</button>
   </div>
-  <div id="trad-content"></div>`;
+  <div id="trad-content"></div>
+  ${relatedModules(c.related)}`;
 
   function renderTechContent(tech) {
     const content = {
@@ -3960,7 +3963,7 @@ const ASSESS_MOD_LABELS = {
 
 
 /* =============================================================================
-   About page — displayed on first load; return by clicking the FPF logo or
+   About page — displayed on first load; return by clicking the logo or
    the site title in the header.
    All copy is sourced from CONTENT.about in content.js — edit text there.
    ============================================================================= */
@@ -3997,7 +4000,7 @@ function renderAbout() {
 
   $('module-content').innerHTML = `
   <div class="about-hero animate-in">
-    <span class="about-eyebrow">${a.eyebrow}</span>
+    ${a.eyebrow ? `<span class="about-eyebrow">${a.eyebrow}</span>` : ''}
     <h2>${a.title}</h2>
     <div class="about-subtitle">${a.subtitle}</div>
   </div>
@@ -4418,7 +4421,6 @@ function renderAbout() {
 
     let txt = `PERSONALIZED PETs LEARNING PATH\n`;
     txt += `Privacy Enhancing Technologies in Education — Interactive Guide\n`;
-    txt += `Future of Privacy Forum  ·  fpf.org\n`;
     txt += `Generated: ${today}\n\n`;
     txt += `${'='.repeat(64)}\n`;
     txt += `YOUR PROFILE\n`;

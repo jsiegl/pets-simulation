@@ -915,7 +915,7 @@ svg.pprl-svg {
    24. Dark / Light mode theming
    The default is dark mode (the :root values above).
    When <body> has class "light-mode", these properties override the dark tokens
-   with FPF brand colours:
+   with light-mode brand colours:
      Primary:   #01B8FC (blue), #231f23 (near-black), #59545b (dark grey)
      Secondary: #CCF1FE (light blue), #FFBD59 (gold), #7ED957 (green)
    ============================================================================= */
@@ -930,18 +930,18 @@ body.light-mode {
   --border:   #cce4f7;
   --border2:  #99cef0;
 
-  /* Accent colours mapped to FPF brand palette */
-  --mint:      #01B8FC;   /* FPF Primary Blue — replaces dark-mode mint */
+  /* Accent colours mapped to light-mode palette */
+  --mint:      #01B8FC;   /* Primary Blue — replaces dark-mode mint */
   --mint-dim:  #0190c8;
   --coral:     #e03050;   /* kept warm-red for "risk" indicators */
   --coral-dim: #f7c5ce;
-  --amber:     #FFBD59;   /* FPF Secondary Gold */
+  --amber:     #FFBD59;   /* Secondary Gold */
   --blue:      #0080cc;   /* deeper blue for info callouts */
-  --blue-dim:  #CCF1FE;   /* FPF light blue — used as subtle bg tint */
+  --blue-dim:  #CCF1FE;   /* light blue — used as subtle bg tint */
 
   /* Text hierarchy */
-  --text:        #231f23;   /* FPF near-black */
-  --text-dim:    #59545b;   /* FPF dark grey */
+  --text:        #231f23;   /* near-black */
+  --text-dim:    #59545b;   /* dark grey */
   --text-bright: #06080c;   /* near-black for headings */
 
   /* Override hard-coded dark backgrounds */
@@ -958,7 +958,7 @@ body.light-mode header {
 /* Nav panel in light mode */
 body.light-mode nav { background: var(--panel); }
 
-/* Active nav button in light mode uses FPF blue */
+/* Active nav button in light mode uses primary blue */
 body.light-mode .nav-btn.active { color: #ffffff; background: var(--mint); }
 
 /* Trad module active button keeps its purple */

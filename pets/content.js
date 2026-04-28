@@ -232,7 +232,7 @@ const TIPS = {
 
    Structure:
      CONTENT.about  — landing / about page (displayed on first load; return by
-                       clicking the FPF logo or site title in the header)
+                       clicking the logo or site title in the header)
      CONTENT.<moduleKey> — {
        tag, title, definition, useCase, tradeoffs, notes, resources,
        ...module-specific simulation data (schools, steps, institutions, etc.)
@@ -244,21 +244,23 @@ const CONTENT = {
 
   // ── About / Home page ──────────────────────────────────────────────────────
   //
-  // Displayed on first load and whenever the user clicks the FPF logo or the
+  // Displayed on first load and whenever the user clicks the logo or the
   // site title in the header. All copy lives here so it can be updated without
   // touching app.js. `paragraphs` is an array rendered in order; `disclaimer`
   // is separated so it can receive distinct callout styling.
   about: {
-    eyebrow:  'Future of Privacy Forum',
+    eyebrow:  '',
     title:    'Privacy Enhancing Technologies in Education — Interactive Guide',
-    subtitle: 'An experimental companion tool · April 2026',
+    subtitle: 'An experimental companion tool · April 2026 · v2026-04-27b',
 
     paragraphs: [
-      'This interactive tool represents an initial exploration by Future of Privacy Forum into how generative AI can support understanding of complex privacy concepts in education. Developed as a companion "thought experiment" to our 2026 resources on privacy-enhancing technologies (PETs) in education for SEAs, Researchers and EDTech providers, this experience is designed to translate key ideas from our analysis into a more visual, interactive format. It builds on <a href="https://fpf.org/blog/fpf-releases-report-on-the-adoption-of-privacy-enhancing-technologies-by-state-education-agencies/" target="_blank" rel="noopener">findings from our earlier work</a> examining how state education agencies and their partners are beginning to evaluate and adopt PETs.',
+      'This interactive tool grew out of a personal side project exploring how generative AI coding assistants can be used to build more intuitive ways of understanding complex technical ideas—alongside a broader effort to learn more about privacy-enhancing technologies (PETs).',
 
-      'Privacy-enhancing technologies — including approaches such as secure multiparty computation, differential privacy, and synthetic data — hold significant promise for enabling data use while reducing risks to individuals. However, these technologies can be difficult to conceptualize and compare in practice. This prototype uses AI-assisted methods (including tools such as Claude Code and Claude Artifacts) to present simplified scenarios, visualizations, and guided explanations intended to make these concepts more accessible to policymakers, researchers, and practitioners.',
+      'The project began as an experiment: taking concepts that are often abstract or mathematically defined and translating them into something more visual, interactive, and scenario-driven. Privacy-enhancing technologies—such as secure multiparty computation, differential privacy, and synthetic data—offer meaningful ways to enable data use while reducing risks to individuals, but they are often difficult to compare or reason about in practical terms. This prototype uses AI-assisted development workflows (including tools like Claude Code and Claude Artifacts) to generate simplified examples, visualizations, and guided explanations that make these ideas easier to engage with.',
 
-      'This project is being released to a limited audience — including state educational agencies, state longitudinal data system leaders, researchers, and education technology providers — for feedback on both the content and the format. It is not intended to provide technical or legal guidance, nor does it represent a comprehensive or definitive treatment of PETs. Rather, it is an experimental supplement to our formal research, designed to explore whether interactive tools can improve understanding and support more informed decision-making. Please complete the following <a href="https://forms.gle/PCKKiU7uh9BL2Pca8" target="_blank" rel="noopener">brief survey</a> to provide feedback on this resource.',
+      'The current version is intentionally exploratory. It is designed less as a definitive resource and more as a working model for how interactive, AI-supported tools might improve conceptual understanding and decision-making around complex systems. The focus is on accessibility and intuition rather than technical completeness or formal guidance.',
+
+      'The tool is being shared with a limited audience for feedback on both the substance and the format. Input at this stage will help determine whether this approach—combining AI-assisted prototyping with interactive explanation—has practical value for researchers, practitioners, and others working with data-sensitive systems. Please complete the following <a href="https://forms.gle/PCKKiU7uh9BL2Pca8" target="_blank" rel="noopener">brief survey</a> to provide feedback on this resource.',
     ],
 
     exploreLabel: 'Explore the modules',
@@ -558,6 +560,11 @@ const CONTENT = {
         label: 'Synthetic Data',
         note:  'Both control what statistical information leaves a dataset. DP adds calibrated noise to aggregate query results; synthetic data generates a shareable, record-like file. Choose DP when analysts need to query real data interactively with a formal ε guarantee; choose synthetic data when researchers need a downloadable, record-level dataset they can run code against.',
       },
+      {
+        key:   'trad',
+        label: 'Traditional De-identification',
+        note:  'Traditional SDL techniques (suppression, generalization, k-anonymity) reduce re-identification risk heuristically but provide no formal mathematical guarantee. DP provides a provable ε bound on how much any individual\'s data can influence the output. When a formal, auditable privacy guarantee is required — for public-use microdata or regulatory submissions — DP is the appropriate successor to SDL-only approaches.',
+      },
     ],
 
     // ── Global DP tab ────────────────────────────────────────────────────────
@@ -715,6 +722,16 @@ const CONTENT = {
         label: 'Federated Learning',
         note:  'Both compute across distributed datasets without centralizing raw records. MPC is general-purpose — it can compute any agreed function with cryptographic exactness, but is computationally expensive and slow. FL is specialized for training ML models and is more practical at scale. In practice, FL often uses MPC-based secure aggregation internally to prevent the coordinator from seeing individual institution gradient updates.',
       },
+      {
+        key:   'tee',
+        label: 'Trusted Execution Environments',
+        note:  'Both enable joint computation over sensitive data without exposing raw records to the compute layer. MPC uses cryptographic protocols — no hardware trust required, but high communication overhead and complexity. TEEs use hardware-enforced isolation — faster and more flexible for complex queries, but require trusting the CPU manufacturer and attestation chain. Choose MPC when hardware trust is unacceptable; choose TEE when query complexity or latency requirements rule out multi-round cryptographic protocols.',
+      },
+      {
+        key:   'he',
+        label: 'Homomorphic Encryption',
+        note:  'Both allow a third party to compute on data without seeing the plaintext. MPC distributes computation across parties using secret sharing — no single party holds the full input. HE encrypts data under a key held only by the data owner — the vendor computes on ciphertext and never holds the key. MPC is more mature for multi-party settings; HE is better suited when a single data owner wants to outsource computation to an untrusted cloud vendor without sharing a decryption key.',
+      },
     ],
   },
 
@@ -750,6 +767,7 @@ const CONTENT = {
     ],
 
     notes: `<ul>
+      <li><strong>FERPA / Legal relevance.</strong> Federated learning keeps raw student records local — only gradient updates (Δw) leave each institution, not the underlying data. Whether gradient updates constitute "education records" under FERPA is unsettled: they are not records "directly related to a student" in the traditional sense, but gradient inversion attacks can reconstruct individual-level data from them, which regulators may view as functionally equivalent to a disclosure. Agencies should treat sharing gradient updates with an external coordinator as a potential FERPA disclosure until authoritative guidance clarifies the issue. The most applicable exception for an external coordinator is typically the <strong>school official exception</strong> (34 C.F.R. § 99.31(a)(1)) — the coordinator must operate under the agency's direct control, have a legitimate educational interest in the computation, and be bound by a data use agreement prohibiting use for any other purpose. Adding DP-SGD materially affects this analysis: properly noised gradients may not identify any individual, which could remove the FERPA disclosure trigger — though agencies should confirm this determination with legal counsel before relying on it.</li>
       <li><strong>Federated learning is data minimization, not anonymization.</strong> FL reduces what data leaves each institution — raw records stay local — but it does not anonymize or de-identify that data. Gradient updates can leak individual-level information (see gradient inversion below), and the global model itself carries statistical fingerprints of the training set. FL is best understood as a data-minimization architecture that reduces exposure compared to centralizing raw records. It is not a substitute for anonymization or de-identification, and is most often deployed alongside other PETs — particularly DP — to achieve stronger privacy guarantees.</li>
       <li><strong>Gradient inversion — the hidden privacy risk.</strong> Sharing gradient updates (Δw) instead of raw data is not the same as sharing nothing. In 2019, Zhu et al. demonstrated that gradients from a single training step can be inverted to approximately reconstruct the training images pixel-by-pixel (<em>"Deep Leakage from Gradients," NeurIPS 2019</em>). For tabular data like student records, similar reconstruction attacks have been shown to recover individual row values from gradient updates — especially when batch sizes are small (one record = one gradient update).</li>
       <li><strong>DP-SGD is the mitigation.</strong> Differentially Private Stochastic Gradient Descent (DP-SGD, Abadi et al. 2016) clips each per-sample gradient to a maximum norm, then adds calibrated Gaussian noise before the update is sent to the coordinator. This provides a formal (ε, δ)-DP guarantee on the gradient, making reconstruction attacks provably difficult. The cost is reduced model accuracy — the same privacy-utility tradeoff as global DP, but at the gradient level.</li>
@@ -823,6 +841,11 @@ const CONTENT = {
         label: 'Differential Privacy',
         note:  'DP protects aggregate query outputs with a formal, provable ε guarantee. Synthetic data releases a record-like file, but relies on generation quality unless DP-trained. For the strongest privacy assurance on released files, choose DP-trained synthesis — but expect reduced fidelity for small subgroups. For interactive analysis of real data, DP query mechanisms are the more appropriate tool.',
       },
+      {
+        key:   'trad',
+        label: 'Traditional De-identification',
+        note:  'Traditional SDL produces record-like files using suppression, generalization, and k-anonymity — operationally familiar, but with no formal privacy guarantee and increasing vulnerability to re-identification attacks using external data. DP-trained synthetic data provides a provable ε bound and generates a file that can be freely shared, at the cost of reduced fidelity for small subgroups. When a publicly releasable microdata file with a formal guarantee is the goal, DP synthesis is the more defensible choice.',
+      },
     ],
 
     // ── Statistical Equivalence panel — rows rendered in the toggle panel ──────
@@ -889,7 +912,7 @@ const CONTENT = {
     notes: '<ul style="margin:8px 0 0 0;padding-left:1.4em;line-height:1.9"><li><strong>FERPA / Legal relevance.</strong> Placing education records inside a secure enclave does not create a FERPA safe harbor — agencies must still have a legal basis for disclosing records to the enclave platform operator (typically the school official or studies exception), documented in a data use agreement that specifies the operator\'s access controls and obligations. The enclave\'s hardware isolation satisfies the "reasonable methods" expectation for limiting unauthorized access, but it does not substitute for the legal authorization that FERPA requires before records leave the agency\'s direct control.</li></ul>',
 
     resources: [
-      // FPF policy report — best resource for policy audience on TEEs and confidential computing
+      // Policy report — best resource for policy audience on TEEs and confidential computing
       ['Confidential Computing and Privacy: Policy Implications of Trusted Execution Environments — Future of Privacy Forum (2024)', 'https://fpf.org/wp-content/uploads/2025/04/FPF_Confidential_Computing_Digital_R3_-_2025_Update.pdf'],
       // CCC overview whitepaper — industry definition and use cases
       ['Confidential Computing: Hardware-Based Trusted Execution for Applications and Data — Confidential Computing Consortium', 'https://confidentialcomputing.io/wp-content/uploads/sites/10/2023/03/CCC_Overview.pdf'],
@@ -897,6 +920,19 @@ const CONTENT = {
       ['A Technical Analysis of Confidential Computing — Confidential Computing Consortium', 'https://confidentialcomputing.io/wp-content/uploads/sites/10/2023/03/CCC-A-Technical-Analysis-of-Confidential-Computing-v1.3_unlocked.pdf'],
       // CCC accessible blog post explaining TEEs for non-specialists
       ['Basics of Trusted Execution Environments — Confidential Computing Consortium blog', 'https://confidentialcomputing.io/2024/03/13/basics-of-trusted-execution-environments-tees-the-heart-of-confidential-computing/'],
+    ],
+
+    related: [
+      {
+        key:   'mpc',
+        label: 'Secure Multi-Party Computation',
+        note:  'Both enable computation over sensitive data without exposing raw records to the compute layer. TEEs rely on hardware-enforced isolation (trust the CPU manufacturer, but no cryptographic multi-party protocol needed). MPC relies on cryptographic secret sharing (no hardware trust required, but high communication overhead). Choose TEE when query complexity or latency rules out multi-round protocols; choose MPC when hardware trust is unacceptable or unavailable.',
+      },
+      {
+        key:   'he',
+        label: 'Homomorphic Encryption',
+        note:  'Both allow computation on data that remains hidden from the compute layer. TEEs hide data by hardware isolation — any code that passes attestation can read plaintext inside the enclave, but nothing outside can. HE hides data by encryption — the compute layer operates on ciphertext and never holds the decryption key. TEEs support arbitrary computations at near-native speed; HE supports only algebraic operations but requires no trusted hardware.',
+      },
     ],
   },
 
@@ -932,10 +968,23 @@ const CONTENT = {
       ['Homomorphic Encryption Standardization — Introduction and Open Libraries', 'https://homomorphicencryption.org/introduction/'],
       // Internet Society policy brief — practical limitations and policy implications, non-technical
       ['Homomorphic Encryption: What Is It, and Why Does It Matter? — Internet Society', 'https://www.internetsociety.org/resources/doc/2023/homomorphic-encryption/'],
-      // FPF issue brief — HE applied to cross-border fraud detection (concrete use case)
+      // Issue brief — HE applied to cross-border fraud detection (concrete use case)
       ['PETs Use Case: Preventing Financial Fraud with Fully Homomorphic Encryption — FPF', 'https://fpf.org/wp-content/uploads/2023/04/FPF-FHE-Issue-Brief-April-2023.pdf'],
       // Microsoft SEAL — leading open-source HE library (BFV/CKKS)
       ['Microsoft SEAL: Open-Source Homomorphic Encryption Library', 'https://github.com/microsoft/SEAL'],
+    ],
+
+    related: [
+      {
+        key:   'tee',
+        label: 'Trusted Execution Environments',
+        note:  'Both solve the same core problem: letting an untrusted party compute on data it cannot read. HE achieves this cryptographically — the vendor operates on ciphertext and never holds the decryption key. TEEs achieve it through hardware isolation — attested code runs on plaintext inside a secure enclave that the vendor cannot inspect. HE requires no trusted hardware but is 1,000–1,000,000× slower; TEE is near-native speed but requires trusting the CPU manufacturer.',
+      },
+      {
+        key:   'mpc',
+        label: 'Secure Multi-Party Computation',
+        note:  'Both allow computation without revealing inputs to the compute layer. HE is best suited when a single data owner wants to outsource analytics to an untrusted vendor — the owner holds the key, the vendor computes on ciphertext. MPC is better for multi-party settings where several institutions each hold private inputs and want to compute a joint result — no single party holds the full dataset and no encryption key needs to be shared.',
+      },
     ],
   },
 
@@ -999,6 +1048,19 @@ const CONTENT = {
       'the dataset contains rare records or small demographic cells — suppression and generalization provide weak protection for sparse data and can be defeated by subtraction or background knowledge attacks',
       'your adversary has access to external data sources they can combine with the released dataset — quasi-identifier combinations can re-identify individuals even when direct identifiers are removed',
       'a formal, auditable privacy guarantee is required — traditional de-id provides no mathematical bound on re-identification risk and cannot be formally certified',
+    ],
+
+    related: [
+      {
+        key:   'dp',
+        label: 'Differential Privacy',
+        note:  'Traditional SDL techniques reduce re-identification risk heuristically — suppression, generalization, and k-anonymity provide no formal mathematical guarantee and are increasingly vulnerable to reconstruction and linkage attacks using external data. Differential privacy provides a provable ε bound: any individual\'s presence can only shift output probabilities by a factor of e^ε. When a formal, auditable guarantee is required, DP is the principled successor to SDL-only approaches.',
+      },
+      {
+        key:   'synth',
+        label: 'Synthetic Data',
+        note:  'Both produce shareable, record-like files without exposing real student records directly. Traditional de-id suppresses, generalizes, or perturbs real records — the structure comes from real data, which limits how far protection can go without destroying utility. Synthetic data generates entirely new records from a statistical model — no real individual is in the output. For public-use microdata that needs to be freely shared, DP-trained synthetic data is more defensible than SDL-treated real records.',
+      },
     ],
 
     // Each sub-technique is rendered as its own card.
